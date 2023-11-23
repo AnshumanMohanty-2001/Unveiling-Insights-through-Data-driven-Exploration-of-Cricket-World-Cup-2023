@@ -30,7 +30,7 @@ def save_df(columns, records, df_folder, name):
     """
 
     df = pd.DataFrame(records, columns=columns)
-    df.to_csv(f'../data/{df_folder}/{name}.csv', index=False)
+    df.to_csv(f'data/{df_folder}/{name}.csv', index=False)
 
 
 def segregate_odd_even_indices(main_list):
