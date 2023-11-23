@@ -1,6 +1,5 @@
 from src.utils.utils import save_df, get_soup, \
     segregate_odd_even_indices, get_links
-from collections import defaultdict
 import pandas as pd
 
 # main url that has data
@@ -87,7 +86,7 @@ def get_match_schedule_results(url):
 
 def get_match_facts(file_path):
     """
-    Function to return general match facts
+    function to return general match facts
     :param file_path: csv file containing match schedule and results
     :return: None
     """
@@ -260,6 +259,137 @@ def get_team_extras(url):
     save_df(columns, final_records, 'raw', 'team_extras')
 
 
+def get_match_bowling_stats(file_path):
+    """
+    function to retrieve match by match bowling figures
+    :param file_path: csv file containing match schedule and results
+    :return: None
+    """
+
+    # Read the dataframe containing match schedule and results
+    df = pd.read_csv(file_path)
+
+    match_count = 1
+    records = []
+
+    # loop over the match links
+    for link in df['Scorecard']:
+
+        # Web scraping contents using beautiful soup
+        soup = get_soup(root_link + link)
+
+        batting_team_name = []
+        for tag in soup.find_all('span', class_='ds-text-title-xs '
+                                                'ds-font-bold ds-capitalize'):
+            batting_team_name.append(tag.text)
+
+        bowling_team_name = batting_team_name[::-1]  # 1st batting = 2nd bowl
+
+        i = 0  # team name index
+
+        # bowling stats per match
+        for tag in soup.find_all('thead', class_='ds-bg-fill-content-'
+                                                 'alternate '
+                                                 'ds-text-left')[1:4:2]:
+            tbody = tag.find_next_sibling()
+
+            for tr in tbody.find_all('tr',
+                                     class_=lambda cl: cl != 'ds-hidden'):
+                bowler_stat_list, bowler = [], ''
+                td_tag_bowler = tr.find('td', class_='ds-flex '
+                                                     'ds-items-center')
+                if td_tag_bowler:
+                    bowler = td_tag_bowler.text
+
+                for td_tag in tr.find_all('td', class_='ds-w-0 '
+                                                       'ds-whitespace'
+                                                       '-nowrap '
+                                                       'ds-min-w-max '
+                                                       'ds-text-right'):
+                    bowler_stat_list.append(float(td_tag.text))
+
+                bowler_stat_list.insert(0, bowler)
+                bowler_stat_list.insert(0, bowling_team_name[i])
+                bowler_stat_list.insert(0, match_count)
+                records.append(bowler_stat_list)
+
+            i += 1
+
+        match_count += 1
+
+    # getting table columns
+    columns = ['Match', 'Team', 'Bowler Name', 'Overs', 'Maidens',
+               'Runs Conceded', 'Economy', '0s', '4s', '6s', 'WD',
+               'NB']
+
+    # save dataframes
+    save_df(columns, records, 'raw', 'Bowling_Scorecards')
+
+
+def get_match_batting_stats(file_path):
+    # Read the dataframe containing match schedule and results
+    df = pd.read_csv(file_path)
+
+    match_count = 1  # counter for match number
+    final_records = []
+
+    # loop over the match links
+    for link in df['Scorecard']:
+
+        batting_team_name = []
+
+        # Web scraping contents using beautiful soup
+        soup = get_soup(root_link + link)
+
+        # get batting team names
+        for tag in soup.find_all('span', class_='ds-text-title-xs '
+                                                'ds-font-bold ds-capitalize'):
+            batting_team_name.append(tag.text)
+
+        final_batting_scorecard = []
+
+        for table in soup.find_all('table',
+                                       class_='ds-w-full ds-table '
+                                              'ds-table-md '
+                                              'ds-table-auto '
+                                              'ci-scorecard-table'):
+            team_scorecard = []
+
+            # lambda function to avoid tr tags with specific class names
+            for tr in table.find_all('tr',
+                                     class_=lambda v: v != 'ds-hidden'
+                                     and v != 'ds-text-tight-s')[1:-2]:
+                ignore_td = 0
+                for td_tag in tr:
+                    if td_tag.text == 'TOTAL':
+                        break
+                    if ignore_td != 1 and ignore_td != 4:
+                        team_scorecard.append(td_tag.text)
+                    ignore_td += 1
+            final_batting_scorecard.append(team_scorecard)
+
+        i = 0  # team name index
+        for scorecard in final_batting_scorecard:
+            scorecard.insert(0, batting_team_name[i])
+            scorecard.insert(0, match_count)
+            final_records.append(scorecard)
+            i += 1
+        match_count += 1
+
+    # setting table columns
+    columns = ['Match', 'Team']
+
+    for i in range(1, 12):
+        columns.append(f'Batting_{i}_name')
+        columns.append(f'Batting_{i}_runs')
+        columns.append(f'Batting_{i}_balls')
+        columns.append(f'Batting_{i}_4s')
+        columns.append(f'Batting_{i}_6s')
+        columns.append(f'Batting_{i}_strike_rate')
+
+    save_df(columns, final_records, 'raw', 'Batting_Scorecards')
+
+
 def get_data():
     """
     Function to call the methods in get_data
@@ -299,3 +429,7 @@ def get_data():
     # retrieve team extras
     get_team_extras('/records/tournament/team-most-extras-innings/'
                     'icc-cricket-world-cup-2023-24-15338')
+
+    # retrieve bowling and batting scorecard for every match
+    get_match_bowling_stats('data/raw/match_schedule_results.csv')
+    get_match_batting_stats('data/raw/match_schedule_results.csv')
