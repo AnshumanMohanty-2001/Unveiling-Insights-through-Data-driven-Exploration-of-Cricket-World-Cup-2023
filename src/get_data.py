@@ -327,6 +327,12 @@ def get_match_bowling_stats(file_path):
 
 
 def get_match_batting_stats(file_path):
+    """
+    function to retrieve match by match batting figures
+    :param file_path: csv file containing match schedule and results
+    :return: None
+    """
+
     # Read the dataframe containing match schedule and results
     df = pd.read_csv(file_path)
 
@@ -349,10 +355,10 @@ def get_match_batting_stats(file_path):
         final_batting_scorecard = []
 
         for table in soup.find_all('table',
-                                       class_='ds-w-full ds-table '
-                                              'ds-table-md '
-                                              'ds-table-auto '
-                                              'ci-scorecard-table'):
+                                   class_='ds-w-full ds-table '
+                                          'ds-table-md '
+                                          'ds-table-auto '
+                                          'ci-scorecard-table'):
             team_scorecard = []
 
             # lambda function to avoid tr tags with specific class names
@@ -388,6 +394,32 @@ def get_match_batting_stats(file_path):
         columns.append(f'Batting_{i}_strike_rate')
 
     save_df(columns, final_records, 'raw', 'Batting_Scorecards')
+
+
+def get_venue_list(link):
+    """
+    function to return venue info
+    :param link: url containing tournament venues
+    :return: None
+    """
+
+    # Web scraping contents using beautiful soup
+    soup = get_soup(link)
+
+    # getting table records
+    records = []
+    for div in soup.find_all('div', class_='cb-col cb-col-100 '
+                                           'cb-lst-itm cb-pos-rel '
+                                           'cb-lst-itm-lg'):
+        venue_name = div.find('h2', class_='cb-nws-hdln cb-font-18 line-ht24')
+        city_name = div.find('div', class_='cb-nws-intr')
+        records.append([venue_name.text, city_name.text])
+
+    # setting table columns
+    columns = ['Stadium', 'City']
+
+    # save dataframes
+    save_df(columns, records, 'raw', 'venues')
 
 
 def get_data():
@@ -433,3 +465,7 @@ def get_data():
     # retrieve bowling and batting scorecard for every match
     get_match_bowling_stats('data/raw/match_schedule_results.csv')
     get_match_batting_stats('data/raw/match_schedule_results.csv')
+
+    # retrieve tournament venues
+    get_venue_list('https://www.cricbuzz.com/cricket-series/6732/'
+                   'icc-cricket-world-cup-2023/venues')
