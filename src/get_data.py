@@ -1,7 +1,10 @@
-from utils.utils import save_df, get_soup, \
+from src.utils.utils import save_df, get_soup, \
     segregate_odd_even_indices, get_links
 from collections import defaultdict
 import pandas as pd
+
+# main url that has data
+root_link = 'https://www.espncricinfo.com/'
 
 
 def get_points_table(url):
@@ -172,7 +175,7 @@ def get_match_facts(file_path):
     team_1_pp_2, team_2_pp_2 = segregate_odd_even_indices(pp_2)
     team_1_pp_3, team_2_pp_3 = segregate_odd_even_indices(pp_3)
 
-    # getting table rows
+    # setting table rows
     columns = ['Time', 'Toss', 'Team 1 Score', 'Team 2 Score',
                'Team 1 PP-1 Score', 'Team 1 PP-2 Score',
                'Team 1 PP-3 Score', 'Team 2 PP-1 Score',
@@ -189,71 +192,9 @@ def get_match_facts(file_path):
     save_df(columns, final_records, 'raw', 'match_facts')
 
 
-def get_match_bowling_extras(file_path):
-    """
-    Function to generate additional bowling stats
-    :param file_path: csv file containing match schedule and results
-    :return: None
-    """
-
-    # Read the dataframe containing match schedule and results
-    df = pd.read_csv(file_path)
-
-    bowler_extras = defaultdict(list)
-
-    # loop over the match links
-    for url in df['Scorecard']:
-
-        # Web scraping contents using beautiful soup
-        soup = get_soup(root_link + url)
-
-        for tag in soup.find_all('thead', class_='ds-bg-fill-'
-                                                 'content-alternate '
-                                                 'ds-text-left')[1:4:2]:
-            tbody = tag.find_next_sibling()
-
-            n = 'ds-hidden'  # name of class to be excluded
-
-            for tr_tag in tbody.find_all('tr', class_=lambda cls: cls != n):
-                bowler_stat_list, bowler = [], ''
-                td_tag_bowler = tr_tag.find('td', class_='ds-flex '
-                                                         'ds-items-center')
-
-                if td_tag_bowler:
-                    bowler = td_tag_bowler.text
-
-                for td_tag in tr_tag.find_all('td', class_='ds-w-0'
-                                                           ' ds-whitespace'
-                                                           '-nowrap '
-                                                           'ds-min-w-max '
-                                                           'ds-text-right'):
-                    bowler_stat_list.append(float(td_tag.text))
-
-                bowler_extras[bowler].append(bowler_stat_list)
-
-    # Element-wise sum of the stats for each bowler per match
-    result_dict = {key: [sum(x) for x in zip(*value_list)]
-                   for key, value_list in bowler_extras.items()}
-
-    # Update the defaultdict with the result dictionary
-    bowler_extras.update(result_dict)
-
-    final_records = []
-    for key, value in bowler_extras.items():
-        value.insert(0, key)
-        final_records.append(value)
-
-    # getting table columns
-    columns = ['Bowler Name', 'Overs', 'Maidens', 'Runs Conceded', 'Economy',
-               '0s', '4s', '6s', 'WD', 'NB']
-
-    # save dataframes
-    save_df(columns, final_records, 'raw', 'match_bowling_extras')
-
-
 def get_records(links):
     """
-    function to generate batting and bowling stats
+    function to generate batting and bowling stats of world cup
     :param links: links to individual stats page
     :return: None
     """
@@ -288,7 +229,7 @@ def get_records(links):
 
 def get_team_extras(url):
     """
-    function to return the extras conceded by teams
+    function to generate the extras conceded by teams
     :param url: url to extras page
     :return: None
     """
@@ -319,10 +260,11 @@ def get_team_extras(url):
     save_df(columns, final_records, 'raw', 'team_extras')
 
 
-if __name__ == '__main__':
-
-    # root link
-    root_link = 'https://www.espncricinfo.com/'
+def get_data():
+    """
+    Function to call the methods in get_data
+    :return: None
+    """
 
     # retrieve points table raw data
     points_table_url = ('https://www.cricbuzz.com/cricket-series/6732/'
@@ -335,10 +277,7 @@ if __name__ == '__main__':
     get_match_schedule_results(matches_url)
 
     # retrieve general match facts
-    get_match_facts('../data/raw/match_schedule_results.csv')
-
-    # retrieve general bowling facts
-    get_match_bowling_extras('../data/raw/match_schedule_results.csv')
+    get_match_facts('data/raw/match_schedule_results.csv')
 
     # retrieve bowling record links and remove links for redundant records
     link = get_links(root_link + 'records/tournament/icc-cricket-world-cup'
