@@ -1,7 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-
+import glob
+import re
 
 def get_soup(url):
     """
@@ -74,3 +75,13 @@ def get_links(link, input_str):
                     links.append(li_element.find('a').get('href'))
 
     return links
+
+
+def get_file_list(directory_path, file_pattern):
+    return glob.glob(f'{directory_path}/{file_pattern}')
+
+
+def get_first_innings_overs(string):
+    overs_pattern = re.compile(r'\d+\.\d+ overs')
+    overs_match = overs_pattern.search(string)
+    return overs_match.group()
