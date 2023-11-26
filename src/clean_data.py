@@ -380,6 +380,23 @@ def change_dtype_of_columns(df, column_names, new_dtype):
     return df
 
 
+def preprocess_pts_table(df, file):
+    """
+    function to separate qualification column from team
+    :param df: points table csv
+    :param file: file path
+    :return: None
+    """
+
+    # Use regular expression to extract text within parentheses
+    df['Qualification_Status'] = df['Teams'].str.extract(r'\((.*?)\)', expand=False)
+
+    # Remove the extracted text from the original column
+    df['Teams'] = df['Teams'].str.replace(r'\(.*?\)', '').str.strip()
+
+    df.to_csv(file, index=False)
+
+
 def clean_data():
     """
     function to clean data
@@ -504,3 +521,7 @@ def clean_data():
                                              '0s', '4s', '6s', 'WD', 'NB'],
                                             'Int64')
     df_bowl_score.to_csv(new_directory_path + '/Bowling_Scorecards.csv')
+
+    # separating q column from points table
+    df_pts = pd.read_csv('data/processed/points_table.csv')
+    preprocess_pts_table(df_pts, 'data/processed/points_table.csv')
