@@ -2,6 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import glob
+import geopy
+from geopy.geocoders import Nominatim
 import re
 
 def get_soup(url):
@@ -78,10 +80,37 @@ def get_links(link, input_str):
 
 
 def get_file_list(directory_path, file_pattern):
+    """
+    function to get list of files
+    :param directory_path: folder path
+    :param file_pattern: file pattern
+    :return: file list
+    """
+
     return glob.glob(f'{directory_path}/{file_pattern}')
 
 
 def get_first_innings_overs(string):
+    """
+    function to get team 1 overs
+    :param string: column record
+    :return: Overs
+    """
+
     overs_pattern = re.compile(r'\d+\.\d+ overs')
     overs_match = overs_pattern.search(string)
+
     return overs_match.group()
+
+
+def get_longitude_and_latitude(address):
+    """
+    function to get longitude and latitudes of venues
+    :param address: venue address
+    :return: latitude and longitude of venue
+    """
+
+    geolocator = Nominatim(user_agent="Your_Name")
+    location = geolocator.geocode(address)
+
+    return location.latitude, location.longitude
