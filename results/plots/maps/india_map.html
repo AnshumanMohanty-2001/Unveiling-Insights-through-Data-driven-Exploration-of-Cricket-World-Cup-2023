@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_c95940b7a8e3f4c07a09254ddfde5c71 {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_c95940b7a8e3f4c07a09254ddfde5c71" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_c95940b7a8e3f4c07a09254ddfde5c71 = L.map(
+                "map_c95940b7a8e3f4c07a09254ddfde5c71",
+                {
+                    center: [20.5937, 78.9629],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 5,
+                    zoomControl: true,
+                    preferCanvas: false,
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_4c0e00ea4ef8d2d91463edf1a98332d3 = L.tileLayer(
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {"attribution": "Data by \u0026copy; \u003ca target=\"_blank\" href=\"http://openstreetmap.org\"\u003eOpenStreetMap\u003c/a\u003e, under \u003ca target=\"_blank\" href=\"http://www.openstreetmap.org/copyright\"\u003eODbL\u003c/a\u003e.", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            );
+        
+    
+                tile_layer_4c0e00ea4ef8d2d91463edf1a98332d3.addTo(map_c95940b7a8e3f4c07a09254ddfde5c71);
+    
+            var marker_18a51553ff76f454e0ab4002226b2f97 = L.marker(
+                [28.63753095, 77.24293445747605],
+                {}
+            ).addTo(map_c95940b7a8e3f4c07a09254ddfde5c71);
+        
+    
+            var icon_e6448372eb296bed4fdbf509e7eeecaa = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "blue", "prefix": "glyphicon"}
+            );
+            marker_18a51553ff76f454e0ab4002226b2f97.setIcon(icon_e6448372eb296bed4fdbf509e7eeecaa);
+        
+    
+            marker_18a51553ff76f454e0ab4002226b2f97.bindTooltip(
+                `<div>
+                     Arun Jaitley Stadium, Delhi
+                 </div>`,
+                {"sticky": true}
+            );
+        
+    
+            var marker_5955d4702db01189fd1e02f9611bac1a = L.marker(
+                [12.9788243, 77.60038607501548],
+                {}
+            ).addTo(map_c95940b7a8e3f4c07a09254ddfde5c71);
+        
+    
+            var icon_9bb04c8b27d24fd15995afcd919140a5 = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "blue", "prefix": "glyphicon"}
+            );
+            marker_5955d4702db01189fd1e02f9611bac1a.setIcon(icon_9bb04c8b27d24fd15995afcd919140a5);
+        
+    
+            marker_5955d4702db01189fd1e02f9611bac1a.bindTooltip(
+                `<div>
+                     M.Chinnaswamy Stadium, Bengaluru
+                 </div>`,
+                {"sticky": true}
+            );
+        
+    
+            var marker_1d595c8530d53807300484c702fa305c = L.marker(
+                [32.1975918, 76.32503371593408],
+                {}
+            ).addTo(map_c95940b7a8e3f4c07a09254ddfde5c71);
+        
+    
+            var icon_93332dc6e829ce372d5a667ba711900d = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "blue", "prefix": "glyphicon"}
+            );
+            marker_1d595c8530d53807300484c702fa305c.setIcon(icon_93332dc6e829ce372d5a667ba711900d);
+        
+    
+            marker_1d595c8530d53807300484c702fa305c.bindTooltip(
+                `<div>
+                     Himachal Pradesh Cricket Association Stadium, Dharamsala
+                 </div>`,
+                {"sticky": true}
+            );
+        
+    
+            var marker_5f8a4015589ca529c0669fd4d9170f0e = L.marker(
+                [17.4059481, 78.5505637699028],
+                {}
+            ).addTo(map_c95940b7a8e3f4c07a09254ddfde5c71);
+        
+    
+            var icon_1eec9a2ed8f40eb7964ca83c6ae1e4d3 = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "blue", "prefix": "glyphicon"}
+            );
+            marker_5f8a4015589ca529c0669fd4d9170f0e.setIcon(icon_1eec9a2ed8f40eb7964ca83c6ae1e4d3);
+        
+    
+            marker_5f8a4015589ca529c0669fd4d9170f0e.bindTooltip(
+                `<div>
+                     Rajiv Gandhi International Stadium, Hyderabad
+                 </div>`,
+                {"sticky": true}
+            );
+        
+    
+            var marker_0cbfef78df0bcc357e8c77cec4719a41 = L.marker(
+                [26.811283, 81.0167051],
+                {}
+            ).addTo(map_c95940b7a8e3f4c07a09254ddfde5c71);
+        
+    
+            var icon_a9d3e1d8190f98684d10624bc0fcc0e3 = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "blue", "prefix": "glyphicon"}
+            );
+            marker_0cbfef78df0bcc357e8c77cec4719a41.setIcon(icon_a9d3e1d8190f98684d10624bc0fcc0e3);
+        
+    
+            marker_0cbfef78df0bcc357e8c77cec4719a41.bindTooltip(
+                `<div>
+                     Bharat Ratna Shri Atal Bihari Vajpayee Ekana Cricket Stadium, Lucknow
+                 </div>`,
+                {"sticky": true}
+            );
+        
+    
+            var marker_66a93a8733c5f9d994718a2e2e80dbc9 = L.marker(
+                [22.5646995, 88.34244173083714],
+                {}
+            ).addTo(map_c95940b7a8e3f4c07a09254ddfde5c71);
+        
+    
+            var icon_bd0a19a8d0b69619bc626a497ca36d77 = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "blue", "prefix": "glyphicon"}
+            );
+            marker_66a93a8733c5f9d994718a2e2e80dbc9.setIcon(icon_bd0a19a8d0b69619bc626a497ca36d77);
+        
+    
+            marker_66a93a8733c5f9d994718a2e2e80dbc9.bindTooltip(
+                `<div>
+                     Eden Gardens, Kolkata
+                 </div>`,
+                {"sticky": true}
+            );
+        
+    
+            var marker_0b6317a741bee0d470c0a5d192a2bed2 = L.marker(
+                [13.0627521, 80.278430410032],
+                {}
+            ).addTo(map_c95940b7a8e3f4c07a09254ddfde5c71);
+        
+    
+            var icon_55cb89d991573765942da1f092e80712 = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "blue", "prefix": "glyphicon"}
+            );
+            marker_0b6317a741bee0d470c0a5d192a2bed2.setIcon(icon_55cb89d991573765942da1f092e80712);
+        
+    
+            marker_0b6317a741bee0d470c0a5d192a2bed2.bindTooltip(
+                `<div>
+                     MA Chidambaram Stadium, Chennai
+                 </div>`,
+                {"sticky": true}
+            );
+        
+    
+            var marker_985ba681de550c0e38745a903f6dc98e = L.marker(
+                [23.0917717, 72.59733447335586],
+                {}
+            ).addTo(map_c95940b7a8e3f4c07a09254ddfde5c71);
+        
+    
+            var icon_f6096cb4d2c816fbe7d27e87627bf759 = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "blue", "prefix": "glyphicon"}
+            );
+            marker_985ba681de550c0e38745a903f6dc98e.setIcon(icon_f6096cb4d2c816fbe7d27e87627bf759);
+        
+    
+            marker_985ba681de550c0e38745a903f6dc98e.bindTooltip(
+                `<div>
+                     Narendra Modi Stadium, Ahmedabad
+                 </div>`,
+                {"sticky": true}
+            );
+        
+    
+            var marker_53fca026170994558831fc1bf03eeb41 = L.marker(
+                [18.67325625, 73.7062646847694],
+                {}
+            ).addTo(map_c95940b7a8e3f4c07a09254ddfde5c71);
+        
+    
+            var icon_c705a77a1bd215a8f09e2030734c159f = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "blue", "prefix": "glyphicon"}
+            );
+            marker_53fca026170994558831fc1bf03eeb41.setIcon(icon_c705a77a1bd215a8f09e2030734c159f);
+        
+    
+            marker_53fca026170994558831fc1bf03eeb41.bindTooltip(
+                `<div>
+                     Maharashtra Cricket Association Stadium, Pune
+                 </div>`,
+                {"sticky": true}
+            );
+        
+    
+            var marker_4e973943660aa2698d13eb81b0631ff6 = L.marker(
+                [18.9385497, 72.82574081674653],
+                {}
+            ).addTo(map_c95940b7a8e3f4c07a09254ddfde5c71);
+        
+    
+            var icon_54d291d305cb893d89b6c027f4e75da0 = L.AwesomeMarkers.icon(
+                {"extraClasses": "fa-rotate-0", "icon": "info-sign", "iconColor": "white", "markerColor": "blue", "prefix": "glyphicon"}
+            );
+            marker_4e973943660aa2698d13eb81b0631ff6.setIcon(icon_54d291d305cb893d89b6c027f4e75da0);
+        
+    
+            marker_4e973943660aa2698d13eb81b0631ff6.bindTooltip(
+                `<div>
+                     Wankhede Stadium, Mumbai
+                 </div>`,
+                {"sticky": true}
+            );
+        
+</script>
+</html>
