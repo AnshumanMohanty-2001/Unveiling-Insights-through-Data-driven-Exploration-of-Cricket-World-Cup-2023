@@ -6,3 +6,5 @@ if __name__ == '__main__':
     get_data()
 
     clean_data()
+
+    visualize_results()
