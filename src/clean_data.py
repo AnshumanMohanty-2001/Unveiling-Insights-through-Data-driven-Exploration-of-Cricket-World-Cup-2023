@@ -397,6 +397,22 @@ def preprocess_pts_table(df, file):
     df.to_csv(file, index=False)
 
 
+def correct_team_positions(df_match_summary, df_batting_scorecards):
+
+    # Group by 'Match No.' and create a list of teams for each match
+    grouped_df = df_batting_scorecards.groupby('Match')['Team'].\
+        apply(list).reset_index()
+
+    # Convert the grouped DataFrame to a list of lists
+    result_list = grouped_df['Team'].values.tolist()
+
+    # Replace the old values in the records with the new ones
+    df_match_summary[['Team 1', 'Team 2']] = pd.DataFrame(result_list)
+
+    # save the modified df
+    df_match_summary.to_csv('data/processed/match_summary.csv')
+
+
 def clean_data():
     """
     function to clean data
@@ -523,5 +539,12 @@ def clean_data():
     df_bowl_score.to_csv(new_directory_path + '/Bowling_Scorecards.csv')
 
     # separating q column from points table
-    df_pts = pd.read_csv('data/processed/points_table.csv')
-    preprocess_pts_table(df_pts, 'data/processed/points_table.csv')
+    df_pts = pd.read_csv(new_directory_path + '/points_table.csv')
+    preprocess_pts_table(df_pts, new_directory_path + '/points_table.csv')
+
+    # Correcting the order of Team 1 and Team 2
+    # (i.e. team batting 1st - Team 1 and team batting 2nd - Team 2)
+    df_match_summary = pd.read_csv(new_directory_path + '/match_summary.csv')
+    df_batting_scorecards = pd.read_csv(new_directory_path +
+                                        '/Batting_Scorecards.csv')
+    correct_team_positions(df_match_summary, df_batting_scorecards)
