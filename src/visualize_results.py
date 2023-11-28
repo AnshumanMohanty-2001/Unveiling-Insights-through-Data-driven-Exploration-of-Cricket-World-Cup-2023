@@ -7,6 +7,10 @@ import folium
 from src.utils.utils import get_longitude_and_latitude
 import os
 
+# Create a directory to save the HTML files
+plot_directory_path = 'results/plots/analysis_plots'
+os.makedirs(plot_directory_path, exist_ok=True)
+
 
 def get_msno_matrix(df, directory_path, filename):
     """
@@ -112,6 +116,58 @@ def plot_point_on_map(co_ordinates_list):
 
     # Save the map to an HTML file or display it
     india_map.save('results/plots/maps/india_map.html')
+
+
+def get_line_chart(df, xlabel, ylabel, title, filename, color=None):
+    """
+    function to generate plotly line chart
+    :param df: dataframe
+    :param xlabel: x-axis label
+    :param ylabel: y-axis label
+    :param title: figure title
+    :param filename: filename to be saved with
+    :param color: df feature on which color is based on
+    :return: None
+    """
+
+    # Create a line chart
+    fig = px.line(df, x=xlabel, y=ylabel, color=color, markers=True,
+                  title=title)
+
+    # Customize layout
+    fig.update_layout(xaxis_title=xlabel, yaxis_title=ylabel, title_x=0.5)
+
+    # Save the plot as an HTML file in the specified directory
+    file_path = os.path.join(plot_directory_path, f'{filename}.html')
+    fig.write_html(file_path)
+
+
+def get_bar(df, x, y, title, color_discrete_map, xaxis_title, yaxis_title, filename, color=None):
+    """
+    function to generate plotly barplot
+    :param df: dataframe
+    :param x: xlabel
+    :param y: ylabel
+    :param title: figure title
+    :param color_discrete_map: dictionary with color mapping
+    :param xaxis_title: xlabel
+    :param yaxis_title: ylabel
+    :param filename: filename to be saved with
+    :param color: df feature on which color is based on
+    :return: None
+    """
+
+    # Create a Plotly Express bar plot
+    fig = px.bar(df, x=x, y=y, color=color,
+                 title=title,
+                 color_discrete_map=color_discrete_map)
+
+    # Customize layout
+    fig.update_layout(xaxis_title=xaxis_title, yaxis_title=yaxis_title, title_x=0.5)
+
+    # Save the plot as an HTML file in the specified directory
+    file_path = os.path.join(plot_directory_path, f'{filename}.html')
+    fig.write_html(file_path)
 
 
 def visualize_results():
