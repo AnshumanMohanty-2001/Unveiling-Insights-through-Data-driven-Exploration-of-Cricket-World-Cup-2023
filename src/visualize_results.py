@@ -1,5 +1,7 @@
 import missingno as msno
 import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 import geopandas as gpd
 import plotly.express as px
 import pandas as pd
@@ -168,6 +170,23 @@ def get_bar(df, x, y, title, color_discrete_map, xaxis_title, yaxis_title, filen
     # Save the plot as an HTML file in the specified directory
     file_path = os.path.join(plot_directory_path, f'{filename}.html')
     fig.write_html(file_path)
+
+
+def heatmap(df, filename, title):
+
+    # setting the figure size
+    plt.figure(figsize=(10, 8))
+
+    # Create a mask to hide the upper triangle
+    mask = np.triu(np.ones_like(df.corr(), dtype=bool))
+
+    # plotting the heatmap
+    sns.heatmap(df.corr(), annot=True, cmap='inferno', fmt=".2f", linewidths=.5, mask=mask)
+
+    plt.title(title)
+
+    # Save the figure as an image file (e.g., PNG)
+    plt.savefig(plot_directory_path + '/' + filename + '.png')
 
 
 def visualize_results():
