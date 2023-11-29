@@ -4,10 +4,10 @@ from src.run_analysis import *
 from src.visualize_results import *
 
 if __name__ == '__main__':
-    # get_data()
-    #
-    # clean_data()
+    get_data()
+
+    clean_data()
 
     run_analysis()
 
-    # visualize_results()
+    visualize_results()
