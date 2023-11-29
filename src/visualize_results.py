@@ -144,25 +144,26 @@ def get_line_chart(df, xlabel, ylabel, title, filename, color=None):
     fig.write_html(file_path)
 
 
-def get_bar(df, x, y, title, color_discrete_map, xaxis_title, yaxis_title, filename, color=None):
+def get_bar(df, x, y, title, color_discrete_map, xaxis_title, yaxis_title, filename, color=None, barmode = 'relative'):
     """
     function to generate plotly barplot
     :param df: dataframe
-    :param x: xlabel
-    :param y: ylabel
+    :param x: x feature
+    :param y: y feature
     :param title: figure title
     :param color_discrete_map: dictionary with color mapping
     :param xaxis_title: xlabel
     :param yaxis_title: ylabel
     :param filename: filename to be saved with
     :param color: df feature on which color is based on
+    :barmode: type of bar plot
     :return: None
     """
 
     # Create a Plotly Express bar plot
     fig = px.bar(df, x=x, y=y, color=color,
                  title=title,
-                 color_discrete_map=color_discrete_map)
+                 color_discrete_map=color_discrete_map, barmode = barmode)
 
     # Customize layout
     fig.update_layout(xaxis_title=xaxis_title, yaxis_title=yaxis_title, title_x=0.5)
@@ -187,6 +188,18 @@ def heatmap(df, filename, title):
 
     # Save the figure as an image file (e.g., PNG)
     plt.savefig(plot_directory_path + '/' + filename + '.png')
+
+
+def get_pie(df, names, title, filename):
+    # Create a pie chart using Plotly
+    fig = px.pie(df, names=names, title=title)
+
+    # Set the title to center
+    fig.update_layout(title=title, title_x=0.5)
+
+    # Save the plot as an HTML file in the specified directory
+    file_path = os.path.join(plot_directory_path, f'{filename}.html')
+    fig.write_html(file_path)
 
 
 def visualize_results():
