@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
-from src.visualize_results import get_bar, get_line_chart, heatmap
+from src.visualize_results import get_bar, get_line_chart, heatmap, get_pie
 
 # Create a directory to save the HTML file
 plot_directory_path = 'results/plots/analysis_plots'
@@ -172,6 +172,191 @@ def get_teams_matchwise_trend(df_match_summary):
                    'Team')
 
 
+def get_first_second_innings_stats(df_match_summary, df_points):
+    sub_first_innings_df = df_match_summary[
+                               ['Team 1', 'Team 2', 'Team 1 Runs Scored', 'Team 1 Overs', 'Team 1 Wickets Lost',
+                                'Winner']][:-3]
+
+    # Overall 1st and 2nd batting trend (Win and losing)
+    tournament_1st_2nd = sub_first_innings_df[['Team 1', 'Team 2', 'Winner']]
+
+    first_bat_win = tournament_1st_2nd[tournament_1st_2nd['Team 1'] == tournament_1st_2nd['Winner']]
+    second_bat_win = tournament_1st_2nd[tournament_1st_2nd['Team 2'] == tournament_1st_2nd['Winner']]
+
+    overall_data = {
+        'Batting': ['1st Batting', '2nd Batting'],
+        'Matches_Won': [first_bat_win.shape[0], second_bat_win.shape[0]]
+    }
+
+    overall_data = pd.DataFrame(overall_data)
+
+    # plot the pie chart
+    get_pie(overall_data, 'Batting', 'Matches Won Batting 1st v/s 2nd', 'matches_won_batting_1_2')
+
+    # get the times teams have batted first
+    first_batting_count = sub_first_innings_df['Team 1'].value_counts()
+
+    # get the total number of times teams have batted second
+    second_batting_count = list(map(lambda x: 9 - x, list(sub_first_innings_df['Team 1'].value_counts())))
+
+    batting_times_df = pd.DataFrame(list(first_batting_count.to_dict().items()), columns=['Team', '1st Batting Count'])
+    batting_times_df['2nd Batting Count'] = second_batting_count
+
+    # Melt the DataFrame to reshape it for side-by-side bar chart
+    df_melted = pd.melt(batting_times_df, id_vars='Team', var_name='Batting Type', value_name='Count')
+
+    # plot the bar chart to show total number of time teams have batted first v/s second
+    get_bar(df_melted, 'Team', 'Count', 'Total count of teams batted 1st v/s 2nd',
+            {'Q': 'limegreen', 'E': 'greenyellow'}, 'Team Name',
+            'Total Count', '1st_2nd_batting_counts', color='Batting Type', barmode='group')
+
+    # Wins batting 1st and batting 2nd
+    # Create a new column 'Winning_Team' based on the condition
+    sub_first_innings_df['First_Winning_Team'] = (
+                sub_first_innings_df['Team 1'] == sub_first_innings_df['Winner']).astype(int)
+
+    # assigning a copy of the sub dataframe
+    first_batting_df = sub_first_innings_df.copy()
+
+    # Rename the 'Team' column to 'Team 1'
+    first_batting_df = first_batting_df.rename(columns={'Team 1': 'Team'})
+
+    # get value counts for each team
+    total_counts_first = first_batting_df.groupby('Team')['First_Winning_Team'].sum().reset_index()
+
+    first_in_wins = pd.merge(batting_times_df, total_counts_first, on='Team')
+
+    first_in_wins.drop('2nd Batting Count', axis=1, inplace=True)
+
+    # Melt the DataFrame to reshape it for side-by-side bar chart
+    df_melted = pd.melt(first_in_wins, id_vars='Team', var_name='First_Winning_Team', value_name='Count')
+
+    # plot the bar chart to show total number of time teams have batted first v/s second
+    get_bar(df_melted, 'Team', 'Count', 'Teams Batting 1st Count and Total wins batting 1st',
+            {'Q': 'limegreen', 'E': 'greenyellow'}, 'Team Name',
+            'Total Count', 'First_Batting_Wins', color='First_Winning_Team', barmode='group')
+
+    # Create a new column 'Winning_Team' based on the condition
+
+    sub_first_innings_df['Second_Winning_Team'] = (
+                sub_first_innings_df['Team 2'] == sub_first_innings_df['Winner']).astype(int)
+
+    # assigning a copy of the sub dataframe
+    second_batting_df = sub_first_innings_df.copy()
+
+    # Rename the 'Team' column to 'Team 1'
+    second_batting_df = second_batting_df.rename(columns={'Team 2': 'Team'})
+
+    # get value counts for each team
+    total_counts_second = second_batting_df.groupby('Team')['Second_Winning_Team'].sum().reset_index()
+
+    second_in_wins = pd.merge(batting_times_df, total_counts_second, on='Team')
+    second_in_wins.drop('1st Batting Count', axis=1, inplace=True)
+
+    # Melt the DataFrame to reshape it for side-by-side bar chart
+    df_melted = pd.melt(second_in_wins, id_vars='Team', var_name='Second_Winning_Team', value_name='Count')
+
+    # plot the bar chart to show total number of time teams have batted first v/s second
+    get_bar(df_melted, 'Team', 'Count', 'Teams Batting 2nd Count and Total wins batting 2nd',
+            {'Q': 'limegreen', 'E': 'greenyellow'}, 'Team Name',
+            'Total Count', 'Second_batting_Wins', color='Second_Winning_Team', barmode='group')
+
+    # frequency of teams getting bowled out before 50 overs
+
+    # Filter the DataFrame based on the condition
+    bowled_out_df = sub_first_innings_df[
+        (sub_first_innings_df['Team 1 Overs'] < 50) & (sub_first_innings_df['Team 1 Wickets Lost'] == 10)]
+
+    # Count occurrences and handle teams not bowled out
+    team_counts = bowled_out_df['Team 1'].value_counts().reindex(df_match_summary['Team 1'].unique(), fill_value=0)
+
+    # Sort counts in descending order
+    team_counts = team_counts.sort_values(ascending=False)
+
+    bowled_out_df = pd.DataFrame(list(team_counts.to_dict().items()), columns=['Team', 'Bowled Out Times'])
+
+    # plot the bar chart to show total number of time teams have gotten bowled out
+    get_bar(bowled_out_df, 'Team', 'Bowled Out Times',
+            'Frequency of Teams getting bowled out before playing 50 overs (1st innings)',
+            None, 'Team Name',
+            'Bowled out count', 'Bowled_out_frequency')
+
+    # %age of teams winning and lossing getting bowled out for less than 300 in lesser than 50 overs
+
+    # getting a df copy
+    bowled_match_winning_df = sub_first_innings_df.copy()
+
+    # Filter teams with overs less than 50, runs less than 300 and lost 10 wickets (to remove the ambiguity of playing less overs due to DLS)
+    bowled_match_winning_df = bowled_match_winning_df[
+        (bowled_match_winning_df['Team 1 Overs'] < 50) & (bowled_match_winning_df['Team 1 Wickets Lost'] == 10) & (
+                    bowled_match_winning_df['Team 1 Runs Scored'] < 300)]
+
+    # Create a new column 'Winning Team' with 1 if 'Team' equals 'Winner', else 0
+    bowled_match_winning_df['Winning Team'] = np.where(
+        bowled_match_winning_df['Team 1'] == bowled_match_winning_df['Winner'], 1, 0)
+
+    # Map values in 'Winning Team' column to labels
+    bowled_match_winning_df['Result'] = bowled_match_winning_df['Winning Team'].map({0: 'Losing', 1: 'Winning'})
+
+    # plot the pie chart
+    get_pie(bowled_match_winning_df, 'Result',
+            'Winning and Losing %age of teams getting bowled out less than 300 before playing 50 overs',
+            'less_than_300_less_than_50')
+
+    bowled_teams_before_df = bowled_match_winning_df.copy()
+
+    bowled_teams_before_df = bowled_teams_before_df[['Team 1', 'Winner']]
+
+    # Get total value counts where 'Team 1' is equal to 'Winner'
+    total_lost_counts = bowled_teams_before_df[
+        bowled_teams_before_df['Team 1'] != bowled_teams_before_df['Winner']].groupby('Team 1').size().reset_index(
+        name='Total Losses')
+
+    # Display the total value counts
+    total_lost_counts = total_lost_counts.sort_values(by='Total Losses', ascending=False)
+
+    # plot the bar chart to show total number of time teams have lost after getting bowled out for less than 300 before 50 overs
+    get_bar(total_lost_counts, 'Team 1', 'Total Losses',
+            'Teams losing after getting bowled out before playing 50 overs and scoring less than 300 (1st innings)',
+            None, 'Team Name',
+            'Losses count', 'Teams_Bowled_out_losses')
+
+    # %age of teams winning after scoring 300 in th first innings
+
+    # getting a df copy
+    batting_match_winning_df = sub_first_innings_df.copy()
+
+    # Filter teams with over 3000 runs in first innings
+    batting_match_winning_df = batting_match_winning_df[(batting_match_winning_df['Team 1 Runs Scored'] >= 300)]
+
+    # Create a new column 'Winning Team' with 1 if 'Team' equals 'Winner', else 0
+    batting_match_winning_df['Winning Team'] = np.where(
+        batting_match_winning_df['Team 1'] == batting_match_winning_df['Winner'], 1, 0)
+
+    # Map values in 'Winning Team' column to labels
+    batting_match_winning_df['Result'] = batting_match_winning_df['Winning Team'].map({0: 'Losing', 1: 'Winning'})
+
+    # plot the pie chart
+    get_pie(batting_match_winning_df, 'Result', 'Winning and Losing %age of teams scoring over 300 (1st innings)',
+            'over_300')
+
+    batting_300_df = batting_match_winning_df.copy()
+
+    batting_300_df = batting_300_df[['Team 1', 'Winner']]
+
+    # Get total value counts where 'Team 1' is equal to 'Winner'
+    total_lost_counts = batting_300_df[batting_300_df['Team 1'] == batting_300_df['Winner']].groupby(
+        'Team 1').size().reset_index(name='Total Wins')
+
+    # Display the total value counts
+    total_lost_counts = total_lost_counts.sort_values(by='Total Wins', ascending=False)
+
+    # plot the bar chart to show total number of time teams have lost after getting bowled out for less than 300 before 50 overs
+    get_bar(total_lost_counts, 'Team 1', 'Total Wins', 'Teams winning after scoring over 300 (1st innings)',
+            None, 'Team Name',
+            'Win count', 'Teams_over_300_wins')
+
+
 def run_analysis():
     # get team standings on the points table (group stages)
     df_points = pd.read_csv('data/processed/points_table.csv')
@@ -184,4 +369,7 @@ def run_analysis():
     # get average runs per wicket and average wickets lost per match for all teams (group stages)
     # get correlation among these factors
     get_overall_team_stats(df_match_summary, df_points)
+
+    # get winning and losing trend of teams batting 1st and second
+    get_first_second_innings_stats(df_match_summary, df_points)
 
