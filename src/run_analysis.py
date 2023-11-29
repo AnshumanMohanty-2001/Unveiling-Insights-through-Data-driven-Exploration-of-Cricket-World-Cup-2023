@@ -1,8 +1,8 @@
 import os
 import pandas as pd
 import numpy as np
-from src.visualize_results import get_bar, get_line_chart
-
+from sklearn.preprocessing import LabelEncoder
+from src.visualize_results import get_bar, get_line_chart, heatmap
 
 # Create a directory to save the HTML file
 plot_directory_path = 'results/plots/analysis_plots'
@@ -22,7 +22,7 @@ def get_team_standings(df):
     # plot bar chart to analyse the points obtained by each team and their qualification status
     get_bar(sub_df_points, 'Teams', 'Won', 'Matches won by Teams',
             {'Q': 'limegreen', 'E': 'greenyellow'}, 'Teams',
-            'matches_won', 'teams_matches_plot', color='Qualification_Status')
+            'matches_won', 'teams_matches_plot', color = 'Qualification_Status')
 
 
 def get_columnwise_records(df):
@@ -34,11 +34,20 @@ def get_columnwise_records(df):
     return column_lists
 
 
-def get_team_stats(df_match_summary, df_points):
+def get_overall_team_stats(df_match_summary, df_points):
+    """
+    function to analyze average runs per wicket and
+    average wickets lost per match for all teams
+    :param df_match_summary: match summary csv
+    :param df_points: points table csv
+    :return: None
+    """
+
     df_match_summary = df_match_summary[:-3]  # Include only the group stage matches
 
     # make a sub dataframe with relevant columns for analysis
-    team_runs_per_wicket_df_team = df_match_summary[['Team 1', 'Team 1 Runs Scored','Team 1 Wickets Lost','Team 2' , 'Team 2 Runs Scored', 'Team 2 Wickets Lost']]
+    team_runs_per_wicket_df_team = df_match_summary[
+        ['Team 1', 'Team 1 Runs Scored', 'Team 1 Wickets Lost', 'Team 2', 'Team 2 Runs Scored', 'Team 2 Wickets Lost']]
 
     # get column records in the form of dict with key as Column name
     # and value as list of team names
@@ -58,19 +67,20 @@ def get_team_stats(df_match_summary, df_points):
     df_team_stats = pd.DataFrame({'Teams': teams, 'runs': runs, 'wickets': wickets})
 
     # Calculate average runs per wicket for each team
-    result_df_avg_runs = df_team_stats.groupby('Teams').apply(lambda x: (x['runs'].sum()) / (x['wickets'].sum())).reset_index(name='Average Runs per Wicket')
+    result_df_avg_runs = df_team_stats.groupby('Teams').apply(
+        lambda x: (x['runs'].sum()) / (x['wickets'].sum())).reset_index(name='Average Runs per Wicket')
 
     # Sort the result DataFrame in descending order
     result_df_avg_runs = result_df_avg_runs.sort_values(by='Average Runs per Wicket', ascending=False)
 
     # merge qualification status on the existing dataframe
     # Merge dataframes on the 'Team' column
-    final_avg_runs_per_wicket_df = pd.merge(result_df_avg_runs , df_points, on='Teams')
+    final_avg_runs_per_wicket_df = pd.merge(result_df_avg_runs, df_points, on='Teams')
 
     # plot bar chart to analyse the average runs scored by each team and their qualification status
     get_bar(final_avg_runs_per_wicket_df, 'Teams', 'Average Runs per Wicket', 'Average Runs per Wicket for all teams',
             {'Q': 'limegreen', 'E': 'greenyellow'}, 'Team Name',
-            'Average Runs', 'teams_matches_average_runs_plot', color='Qualification_Status')
+            'Average Runs', 'teams_matches_average_runs_plot')
 
     # average_wickets_lost
     result_df_avg_wickets = df_team_stats.groupby('Teams').apply(
@@ -82,22 +92,31 @@ def get_team_stats(df_match_summary, df_points):
 
     # merge qualification status on the existing dataframe
     # Merge dataframes on the 'Team' column
-    final_result_df_avg_wickets = pd.merge(result_df_avg_wickets , df_points, on='Teams')
+    final_result_df_avg_wickets = pd.merge(result_df_avg_wickets, df_points, on='Teams')
 
-    # plot bar chart to analyse the average runs scored by each team and their qualification status
+    # plot bar chart to analyse the average wickets lost by each team and their qualification status
     get_bar(final_result_df_avg_wickets, 'Teams', 'Average Wickets lost', 'Average Wickets lost per match all teams',
             {'Q': 'limegreen', 'E': 'greenyellow'}, 'Team Name',
-            'Wickets Lost', 'teams_matches_average_wickets_plot', color='Qualification_Status')
+            'Wickets Lost', 'teams_matches_average_wickets_plot')
 
-    # analysis of first innings scores
+    # find out the correlation of the overall team stats
 
-    # make a sub dataframe with relevant columns for analysis
-    first_innings_df = df_match_summary[['Team 1', 'Winner']]
+    # Dropping the Total matches, Pts, NRR column as it's irrelevant for this analysis
+    # Dropping lost column as winning and lost are complement of each other
+    final_avg_runs_per_wicket_df.drop(['Mat', 'Lost', 'Pts', 'NRR'], axis=1, inplace=True)
 
-    # Replace 'Winner' column values with 1 if equal to 'Team 1', else 0
-    first_innings_df['Winner'] = np.where(first_innings_df['Winner'] == first_innings_df['Team 1'], 1, 0)
+    # Initialize the LabelEncoder
+    label_encoder = LabelEncoder()
 
+    # Merge the avg runs per wicket df and avg wickets lost per match
+    overall_team_stats_df = pd.merge(final_avg_runs_per_wicket_df, result_df_avg_wickets, on='Teams')
 
+    # Fit and transform the Qualification_Status column
+    overall_team_stats_df['Qualification_Status'] = label_encoder.fit_transform(
+        overall_team_stats_df['Qualification_Status'])
+
+    # Generate a correlation heatmap
+    heatmap(overall_team_stats_df, 'overall_team_stats_heatmap', 'Correlation of Team statistics')
 
 
 def get_teams_matchwise_trend(df_match_summary):
@@ -154,7 +173,6 @@ def get_teams_matchwise_trend(df_match_summary):
 
 
 def run_analysis():
-
     # get team standings on the points table (group stages)
     df_points = pd.read_csv('data/processed/points_table.csv')
     get_team_standings(df_points)
@@ -163,8 +181,7 @@ def run_analysis():
     df_match_summary = pd.read_csv('data/processed/match_summary.csv')
     get_teams_matchwise_trend(df_match_summary)
 
-    # get average runs per wicket for all teams
-    # get average runs per wicket for all teams batting 1st and 2nd
-    get_team_stats(df_match_summary, df_points)
-
+    # get average runs per wicket and average wickets lost per match for all teams (group stages)
+    # get correlation among these factors
+    get_overall_team_stats(df_match_summary, df_points)
 
