@@ -536,7 +536,12 @@ def clean_data():
                                             ['Maidens', 'Runs Conceded',
                                              '0s', '4s', '6s', 'WD', 'NB'],
                                             'Int64')
-    df_bowl_score.to_csv(new_directory_path + '/Bowling_Scorecards.csv')
+
+    # Drop the column with an empty name
+    df_bowl_score = df_bowl_score.drop(columns=[''], errors='ignore')
+
+    # remove the unnamed first column
+    df_bowl_score.to_csv(new_directory_path + '/Bowling_Scorecards.csv', index = False)
 
     # separating q column from points table
     df_pts = pd.read_csv(new_directory_path + '/points_table.csv')
