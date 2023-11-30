@@ -1,8 +1,9 @@
 import os
 import pandas as pd
 import numpy as np
+from functools import reduce
 from sklearn.preprocessing import LabelEncoder
-from src.visualize_results import get_bar, get_line_chart, heatmap, get_pie
+from src.visualize_results import get_bar, get_line_chart, heatmap, get_pie, get_dotted_bar
 
 # Create a directory to save the HTML file
 plot_directory_path = 'results/plots/analysis_plots'
@@ -22,7 +23,7 @@ def get_team_standings(df):
     # plot bar chart to analyse the points obtained by each team and their qualification status
     get_bar(sub_df_points, 'Teams', 'Won', 'Matches won by Teams',
             {'Q': 'limegreen', 'E': 'greenyellow'}, 'Teams',
-            'matches_won', 'teams_matches_plot', color = 'Qualification_Status')
+            'matches_won', 'teams_matches_plot', color='Qualification_Status')
 
 
 def get_columnwise_records(df):
@@ -213,7 +214,7 @@ def get_first_second_innings_stats(df_match_summary, df_points):
     # Wins batting 1st and batting 2nd
     # Create a new column 'Winning_Team' based on the condition
     sub_first_innings_df['First_Winning_Team'] = (
-                sub_first_innings_df['Team 1'] == sub_first_innings_df['Winner']).astype(int)
+            sub_first_innings_df['Team 1'] == sub_first_innings_df['Winner']).astype(int)
 
     # assigning a copy of the sub dataframe
     first_batting_df = sub_first_innings_df.copy()
@@ -229,17 +230,17 @@ def get_first_second_innings_stats(df_match_summary, df_points):
     first_in_wins.drop('2nd Batting Count', axis=1, inplace=True)
 
     # Melt the DataFrame to reshape it for side-by-side bar chart
-    df_melted = pd.melt(first_in_wins, id_vars='Team', var_name='First_Winning_Team', value_name='Count')
+    df_melted_first_bat_wins = pd.melt(first_in_wins, id_vars='Team', var_name='First_Winning_Team', value_name='Count')
 
     # plot the bar chart to show total number of time teams have batted first v/s second
-    get_bar(df_melted, 'Team', 'Count', 'Teams Batting 1st Count and Total wins batting 1st',
+    get_bar(df_melted_first_bat_wins, 'Team', 'Count', 'Teams Batting 1st Count and Total wins batting 1st',
             {'Q': 'limegreen', 'E': 'greenyellow'}, 'Team Name',
             'Total Count', 'First_Batting_Wins', color='First_Winning_Team', barmode='group')
 
     # Create a new column 'Winning_Team' based on the condition
 
     sub_first_innings_df['Second_Winning_Team'] = (
-                sub_first_innings_df['Team 2'] == sub_first_innings_df['Winner']).astype(int)
+            sub_first_innings_df['Team 2'] == sub_first_innings_df['Winner']).astype(int)
 
     # assigning a copy of the sub dataframe
     second_batting_df = sub_first_innings_df.copy()
@@ -289,7 +290,7 @@ def get_first_second_innings_stats(df_match_summary, df_points):
     # Filter teams with overs less than 50, runs less than 300 and lost 10 wickets (to remove the ambiguity of playing less overs due to DLS)
     bowled_match_winning_df = bowled_match_winning_df[
         (bowled_match_winning_df['Team 1 Overs'] < 50) & (bowled_match_winning_df['Team 1 Wickets Lost'] == 10) & (
-                    bowled_match_winning_df['Team 1 Runs Scored'] < 300)]
+                bowled_match_winning_df['Team 1 Runs Scored'] < 300)]
 
     # Create a new column 'Winning Team' with 1 if 'Team' equals 'Winner', else 0
     bowled_match_winning_df['Winning Team'] = np.where(
@@ -356,6 +357,481 @@ def get_first_second_innings_stats(df_match_summary, df_points):
             None, 'Team Name',
             'Win count', 'Teams_over_300_wins')
 
+    return first_in_wins, second_in_wins
+
+
+def first_innings_detailed_stats(df_match_summary, df_first_inning_wins, df_second_inning_wins,
+                                 df_batting_scorecards, df_bowling_scorecards):
+    ## 1st innings batting stats
+    df_batting_list = []
+
+    # calculate average run rate for all teams batting 1st
+
+    # exclude last 3 groups
+    sub_first_innings_df = df_match_summary[
+                               ['Team 1', 'Team 1 Runs Scored', 'Team 1 Overs', 'Team 1 Wickets Lost', 'Winner']][:-3]
+
+    # Groupby team name
+    first_team_totals = sub_first_innings_df.groupby('Team 1', as_index=False).agg(
+        {'Team 1 Runs Scored': 'sum', 'Team 1 Wickets Lost': 'sum', 'Team 1 Overs': 'sum'})
+
+    # Calculate run rate for each row
+    first_team_totals['Run Rate'] = (first_team_totals['Team 1 Runs Scored'] / first_team_totals['Team 1 Overs']).round(
+        2)
+
+    # Calculate the average run rate
+    average_run_rate = first_team_totals['Run Rate'].mean().round(2)
+
+    # plot bar plot for average 1st innings run rate for all teams
+    get_dotted_bar(first_team_totals, 'Team 1', 'Run Rate', 'Average Run Rate for all teams (Batting 1st)', 'Team Name',
+                   'Run Rate', 'first_innings_detailed_stats_1', average_run_rate)
+
+    # average wickets lost while batting in first innings
+
+    # Calculate total wickets lost and total matches played for each team
+    team_first_wickets = sub_first_innings_df.groupby('Team 1').agg(
+        {'Team 1 Wickets Lost': 'sum', 'Team 1': 'count'}).rename(columns={'Team 1': 'Matches Played'})
+
+    # Calculate average wickets lost
+    team_first_wickets['Average Wickets Lost'] = team_first_wickets['Team 1 Wickets Lost'] / team_first_wickets[
+        'Matches Played']
+
+    # Calculate the product of Matches Played and Average Wickets Lost
+    team_first_wickets['Weighted Wickets Lost'] = team_first_wickets['Matches Played'] * team_first_wickets[
+        'Average Wickets Lost']
+
+    # Calculate the total matches played and the weighted average wickets lost
+    total_matches = team_first_wickets['Matches Played'].sum()
+    weighted_average_wickets_lost_all_teams = team_first_wickets['Weighted Wickets Lost'].sum() / total_matches
+
+    # drop the index column
+    team_first_wickets.reset_index(inplace=True)
+
+    # plot bar plot for average 1st innings wickets lost by all teams
+    get_dotted_bar(team_first_wickets, 'Team 1', 'Average Wickets Lost', '1st innings all teams average wickets lost',
+                   'Team Name', 'Wickets', 'first_innings_detailed_stats_2', weighted_average_wickets_lost_all_teams)
+
+    # Calculate Phasewise powerplay runs scored
+
+    # powerplay phase-by-phase runs and wickets (only group stage matches)
+    first_innings_pp = df_match_summary[
+                           ['Team 1', 'Team 1 Overs', 'Team 1 PP-1 Runs Scored', 'Team 1 PP-1 Wickets Lost',
+                            'Team 1 PP-2 Runs Scored', 'Team 1 PP-2 Wickets Lost', 'Team 1 PP-3 Runs Scored',
+                            'Team 1 PP-3 Wickets Lost', 'Winner']][:-3]
+
+    # Calculate run rate for each row pp-1
+    first_innings_pp['PP-1 Run Rate'] = (first_innings_pp['Team 1 PP-1 Runs Scored'] / 10).round(2)
+
+    # pp-1 was different for the rain curtailed match (Match 15 Netherlands v/s South Africa. Only 9 overs for the pp-1)
+    first_innings_pp.iloc[14, first_innings_pp.columns.get_loc('PP-1 Run Rate')] = (
+            (first_innings_pp.iloc[14]['PP-1 Run Rate'] * 10) / 9).round(2)
+
+    # Group by 'Team' and calculate the mean of 'RunRate' in pp-1
+    first_innings_pp1_runs = first_innings_pp.groupby('Team 1')['PP-1 Run Rate'].mean().round(2).reset_index()
+
+    # Calculate run rate for each row pp-2
+
+    # calculate pp-2 overs played and pp-3 Overs played (teams getting bowled out)
+    first_innings_pp['Overs without pp-1'] = (first_innings_pp['Team 1 Overs'] - 10).round(1)
+    pp2_pp3_overs_list = first_innings_pp['Overs without pp-1'].to_list()
+
+    pp2_overs, pp3_overs = [[] for _ in range(2)]
+
+    for overs in pp2_pp3_overs_list:
+        if overs == 40.0:
+            pp2_overs.append(30.0)
+            pp3_overs.append(10.0)
+        elif overs < 30.0:
+            pp2_overs.append(overs)
+            pp3_overs.append(0)
+        elif overs < 40.0:
+            pp2_overs.append(30.0)
+            pp3_overs.append(round((overs - 30.0), 1))
+
+    # adding pp-2 and pp-3 overs played
+    first_innings_pp['PP-2 Overs'] = pp2_overs
+    first_innings_pp['PP-3 Overs'] = pp3_overs
+
+    # Calculate run rate for each row pp-2
+    first_innings_pp['PP-2 Run Rate'] = (
+            first_innings_pp['Team 1 PP-2 Runs Scored'] / first_innings_pp['PP-2 Overs']).round(2)
+
+    # Calculate run rate for each row pp-3
+    first_innings_pp['PP-3 Run Rate'] = (
+            first_innings_pp['Team 1 PP-3 Runs Scored'] / first_innings_pp['PP-3 Overs']).round(2)
+
+    # pp-2 was different for the rain curtailed match (Match 15 Netherlands v/s South Africa. Only 26 overs for the pp-2)
+    first_innings_pp.iloc[14, first_innings_pp.columns.get_loc('PP-2 Run Rate')] = (
+            (first_innings_pp.iloc[14]['PP-2 Run Rate'] * 30) / 26).round(2)
+
+    ## Note: - pp-3 run rate has some Nan values due to teams getting bowled out
+
+    # Group by 'Team' and calculate the mean of 'RunRate' in pp-2
+    first_innings_pp2_runs = first_innings_pp.groupby('Team 1')['PP-2 Run Rate'].mean().round(2).reset_index()
+
+    # Convert 'RunRate' to numeric to handle NaN values
+    first_innings_pp['PP-3 Run Rate'] = pd.to_numeric(first_innings_pp['PP-3 Run Rate'], errors='coerce')
+
+    # pp-3 was different for the rain curtailed match (Match 15 Netherlands v/s South Africa. Only 8 overs for the pp-3)
+    first_innings_pp.iloc[14, first_innings_pp.columns.get_loc('PP-3 Run Rate')] = (
+            (first_innings_pp.iloc[14]['PP-3 Run Rate'] * 3) / 8).round(2)
+
+    # Group by 'Team' and calculate the mean of 'RunRate' in pp-3
+    first_innings_pp3_runs = first_innings_pp.groupby('Team 1')['PP-3 Run Rate'].mean().round(2).reset_index()
+
+    # merging the dataframes
+    df_temp = pd.merge(first_innings_pp1_runs, first_innings_pp2_runs, on='Team 1')
+    powerplay_run_rates_innings_1 = pd.merge(df_temp, first_innings_pp3_runs, on='Team 1')
+
+    # Melt the DataFrame to reshape it for side-by-side bar chart
+    df_melted_runs = pd.melt(powerplay_run_rates_innings_1, id_vars='Team 1', var_name='Powerplay',
+                             value_name='RunRate')
+
+    # plot bar chart to analyse the average runs rate for all teams in different phases
+    get_bar(df_melted_runs, 'Team 1', 'RunRate', '1st innings run rate for all teams in different phases',
+            {'Q': 'limegreen', 'E': 'greenyellow'}, 'Team Name',
+            'Run rate', 'first_innings_detailed_stats_3', color='Powerplay', barmode='group')
+
+    # Calculate Phasewise powerplay wickets lost
+
+    # pp-1 wickets lost
+    first_innings_pp1_wickets = first_innings_pp.groupby('Team 1')['Team 1 PP-1 Wickets Lost'].mean().reset_index()
+
+    # pp-2 wickets lost
+    first_innings_pp2_wickets = first_innings_pp.groupby('Team 1')['Team 1 PP-2 Wickets Lost'].mean().reset_index()
+
+    # pp-3 wickets lost
+    first_innings_pp3_wickets = first_innings_pp.groupby('Team 1')['Team 1 PP-3 Wickets Lost'].mean().reset_index()
+
+    # merging the dataframes
+    df_temp = pd.merge(first_innings_pp1_wickets, first_innings_pp2_wickets, on='Team 1')
+    powerplay_wickets_innings_1 = pd.merge(df_temp, first_innings_pp3_wickets, on='Team 1')
+
+    # Melt the DataFrame to reshape it for side-by-side bar chart
+    df_melted_wickets = pd.melt(powerplay_wickets_innings_1, id_vars='Team 1', var_name='Powerplay',
+                                value_name='Wickets')
+
+    # plot bar chart to analyse the wickets lost by all teams in different phases
+    get_bar(df_melted_wickets, 'Team 1', 'Wickets', '1st innings wicket lost for all teams in different phases',
+            {'Q': 'limegreen', 'E': 'greenyellow'}, 'Team Name',
+            'Wickets', 'first_innings_detailed_stats_4', color='Powerplay', barmode='group')
+
+    # Get Win percentage while batting in 1st innings
+
+    pp_runs_wickets_combined = pd.merge(powerplay_run_rates_innings_1, powerplay_wickets_innings_1, on='Team 1')
+
+    df_first_inning_wins['Win %age'] = (
+            df_first_inning_wins['First_Winning_Team'] * 100 / df_first_inning_wins['1st Batting Count'])
+
+    # Rename the 'Team' column to 'Team 1'
+    df_first_inning_wins = df_first_inning_wins.rename(columns={'Team': 'Team 1'})
+
+    pp_runs_wickets_combined_final = pd.merge(pp_runs_wickets_combined, df_first_inning_wins, on='Team 1')
+    pp_runs_wickets_combined_final.drop(['1st Batting Count', 'First_Winning_Team'], axis=1, inplace=True)
+
+    # Renaming the column back to Team
+    pp_runs_wickets_combined_final = pp_runs_wickets_combined_final.rename(columns={'Team 1': 'Team'})
+
+    # Get contribution of Top order (1-3 Batsman), middle order (4-7) and lower order (8-11) batsmen
+
+    # get group stage data
+    df_batting_scorecards = df_batting_scorecards[:-6]
+
+    # getting 1st innings batting scorecards
+    first_batting_scorecards_df = df_batting_scorecards[~df_batting_scorecards['Match'].duplicated()]
+
+    # dropping columns having name, strike rate and match
+    first_batting_scorecards_df.drop(
+        columns=first_batting_scorecards_df.filter(like='name').columns.tolist() + first_batting_scorecards_df.filter(
+            like='strike_rate').columns.tolist() + first_batting_scorecards_df.filter(like='Match').columns.tolist(),
+        inplace=True)
+
+    # grouping by team name and getting get sum of all the records
+    grouped_first_batting_scorecards_df = first_batting_scorecards_df.groupby('Team').sum()
+
+    # get top order, middle order, lower order runs, balls
+    temp_list = ['runs', 'balls', '4s', '6s']
+    run_phasing_df, fours_sixes_df = pd.DataFrame(), pd.DataFrame()
+    for item in temp_list:
+        grouped_first_batting_scorecards_df[f'Top order {item}'] = grouped_first_batting_scorecards_df[
+                                                                       f'Batting_1_{item}'] + \
+                                                                   grouped_first_batting_scorecards_df[
+                                                                       f'Batting_2_{item}'] + \
+                                                                   grouped_first_batting_scorecards_df[
+                                                                       f'Batting_3_{item}']
+        grouped_first_batting_scorecards_df[f'Middle order {item}'] = grouped_first_batting_scorecards_df[
+                                                                          f'Batting_4_{item}'] + \
+                                                                      grouped_first_batting_scorecards_df[
+                                                                          f'Batting_5_{item}'] + \
+                                                                      grouped_first_batting_scorecards_df[
+                                                                          f'Batting_6_{item}'] + \
+                                                                      grouped_first_batting_scorecards_df[
+                                                                          f'Batting_7_{item}']
+        grouped_first_batting_scorecards_df[f'Lower order {item}'] = grouped_first_batting_scorecards_df[
+                                                                         f'Batting_8_{item}'] + \
+                                                                     grouped_first_batting_scorecards_df[
+                                                                         f'Batting_9_{item}'] + \
+                                                                     grouped_first_batting_scorecards_df[
+                                                                         f'Batting_10_{item}'] + \
+                                                                     grouped_first_batting_scorecards_df[
+                                                                         f'Batting_11_{item}']
+
+        run_phasing_df[f'Top order {item}'] = grouped_first_batting_scorecards_df[f'Top order {item}'].astype(int)
+        run_phasing_df[f'Middle order {item}'] = grouped_first_batting_scorecards_df[f'Middle order {item}'].astype(int)
+        run_phasing_df[f'Lower order {item}'] = grouped_first_batting_scorecards_df[f'Lower order {item}'].astype(int)
+
+    # Calculate total runs for each row
+    run_phasing_df['TotalRuns'] = run_phasing_df['Top order runs'] + run_phasing_df['Middle order runs'] + \
+                                  run_phasing_df['Lower order runs']
+
+    # Calculate the percentage of runs for each category
+    run_phasing_df['Top Order Percentage'] = round(
+        (run_phasing_df['Top order runs'] / run_phasing_df['TotalRuns']) * 100, 2)
+    run_phasing_df['Middle Order Percentage'] = round(
+        (run_phasing_df['Middle order runs'] / run_phasing_df['TotalRuns']) * 100, 2)
+    run_phasing_df['Lower Order Percentage'] = round(
+        (run_phasing_df['Lower order runs'] / run_phasing_df['TotalRuns']) * 100, 2)
+
+    # remove team name from being as index
+    run_phasing_df = run_phasing_df.reset_index()
+
+    percentage_batting_df = run_phasing_df[
+        ['Team', 'Top Order Percentage', 'Middle Order Percentage', 'Lower Order Percentage']]
+
+    melted_df = pd.melt(percentage_batting_df, id_vars=['Team'], var_name='Order', value_name='Percentage')
+
+    # plot bar chart to analyse the 'run %age contribution in different phases
+    get_bar(melted_df, 'Team', 'Percentage', '%age contribution (batting phases)',
+            {'Q': 'limegreen', 'E': 'greenyellow'}, 'Team Name',
+            '%age', 'first_innings_detailed_stats_5', color='Order', barmode='group')
+
+    # get strike rate %age of top, middle and lower order
+    run_phasing_df['Top order strike rate'] = round(
+        (run_phasing_df['Top order runs'] / run_phasing_df['Top order balls']) * 100, 2)
+    run_phasing_df['Middle order strike rate'] = round(
+        (run_phasing_df['Middle order runs'] / run_phasing_df['Middle order balls']) * 100, 2)
+    run_phasing_df['Lower order strike rate'] = round(
+        (run_phasing_df['Lower order runs'] / run_phasing_df['Lower order balls']) * 100, 2)
+
+    strike_rate_batting_df = run_phasing_df[
+        ['Team', 'Top order strike rate', 'Middle order strike rate', 'Lower order strike rate']]
+
+    melted_df = pd.melt(strike_rate_batting_df, id_vars=['Team'], var_name='Order', value_name='Strike rate')
+
+    # plot bar chart to analyse the strike rate of all teams in different phases
+    get_bar(melted_df, 'Team', 'Strike rate', 'Strike Rate (batting phases)',
+            {'Q': 'limegreen', 'E': 'greenyellow'}, 'Team Name',
+            'Strike Rate', 'first_innings_detailed_stats_6', color='Order', barmode='group')
+
+    # get boundary percentage for teams
+
+    # get total batting runs
+    batting_runs_columns = grouped_first_batting_scorecards_df.columns[
+        grouped_first_batting_scorecards_df.columns.str.match(r'Batting_\d+_runs')]
+    batting_4s_columns = grouped_first_batting_scorecards_df.columns[
+        grouped_first_batting_scorecards_df.columns.str.match(r'Batting_\d+_4s')]
+    batting_6s_columns = grouped_first_batting_scorecards_df.columns[
+        grouped_first_batting_scorecards_df.columns.str.match(r'Batting_\d+_6s')]
+
+    # Calculate total boundary percentage
+
+    # Sum the runs for each team and create a new column 'total_runs'
+    fours_sixes_df['total_runs'] = grouped_first_batting_scorecards_df[batting_runs_columns].sum(axis=1).astype(int)
+    fours_sixes_df['total_runs_in_4s'] = grouped_first_batting_scorecards_df[batting_4s_columns].sum(axis=1).astype(int)
+    fours_sixes_df['total_runs_in_6s'] = grouped_first_batting_scorecards_df[batting_6s_columns].sum(axis=1).astype(int)
+
+    # Boundary percentage
+    fours_sixes_df['Boundary %age'] = round(((fours_sixes_df['total_runs_in_4s'] * 4 + fours_sixes_df[
+        'total_runs_in_6s'] * 6) * 100 / fours_sixes_df['total_runs']), 2)
+
+    average_boundary_percentage_all_teams = fours_sixes_df['Boundary %age'].mean().round(2)
+
+    fours_sixes_df.reset_index(inplace=True)
+
+    # plot bar plot for average 1st innings boundary %age for all teams
+    get_dotted_bar(fours_sixes_df, 'Team', 'Boundary %age', '1st innings all teams average Boundary %age', 'Team Name',
+                   'Percentage', 'first_innings_detailed_stats_7', average_boundary_percentage_all_teams)
+
+    # Batting correlation
+    batting_dfs = [pp_runs_wickets_combined_final, percentage_batting_df, strike_rate_batting_df]
+
+    # Use reduce to merge DataFrames based on 'Team Name'
+    merged_df = reduce(lambda left, right: pd.merge(left, right, on='Team', how='outer'), batting_dfs)
+
+    # Generate a correlation heatmap for statistics during 1st batting
+    heatmap(merged_df, 'overall_first_batting_heatmap', 'Correlation of Team statistics (1st Batting)')
+
+    ## Team Bowling First stats
+
+    # Get Bowling df
+
+    sub_df_bowling_scorecards = df_bowling_scorecards[
+                                    ['Match', 'Team', 'Maidens', 'Overs', 'Runs Conceded', '0s', '4s', '6s', 'WD',
+                                     'NB']][:-35]
+
+    # getting team_order
+    team_order = df_batting_scorecards[['Match', 'Team']]
+
+    # getting 1st innings bowling order
+    first_batting_scorecards_df = team_order[
+        team_order['Match'].duplicated(keep='first') | ~team_order['Match'].duplicated(keep=False)]
+
+    # Group by match number and team name, then sum the remaining columns
+    df_bowling_stats = sub_df_bowling_scorecards.groupby(['Match', 'Team']).agg(
+        {'Maidens': 'sum', 'Overs': 'sum', 'Runs Conceded': 'sum', '0s': 'sum', '4s': 'sum', '6s': 'sum', 'WD': 'sum',
+         'NB': 'sum'}).reset_index()
+
+    # Merge based on 'Match number' and 'team'
+    first_team_bowling = pd.merge(first_batting_scorecards_df, df_bowling_stats, on=['Match', 'Team'], how='inner')
+
+    # get average 2nd innings run rate and wickets lost
+    general_bowling_stats = first_team_bowling.copy()
+
+    general_bowling_stats_all = general_bowling_stats.groupby(['Team']).sum()
+
+    # removing match column and grouping by team name
+    first_team_bowling.drop(['Match'], axis=1, inplace=True)
+    first_team_bowling = first_team_bowling.groupby(['Team']).agg(
+        {'Maidens': 'sum', 'Overs': 'sum', 'Runs Conceded': 'sum', '0s': 'sum', '4s': 'sum', '6s': 'sum', 'WD': 'sum',
+         'NB': 'sum'}).reset_index()
+
+    # Phasewise Economy calculation
+
+    first_team_bowling['Economy'] = round((first_team_bowling['Runs Conceded'] / first_team_bowling['Overs']), 2)
+
+    average_economy_all_teams = first_team_bowling['Economy'].mean().round(2)
+
+    # plot bar plot for average 1st innings boundary %age runs conceded for all teams
+    get_dotted_bar(first_team_bowling, 'Team', 'Economy', '1st Bowling innings all teams average economy', 'Team Name',
+                   'Economy Rate', 'first_innings_detailed_stats_8', average_economy_all_teams)
+
+    # economy by phase
+    first_bowling_runs = df_match_summary[['Team 2', 'Team 1 Overs', 'Team 1 PP-1 Runs Scored', 'Team 1 Wickets Lost',
+                                           'Team 1 PP-2 Runs Scored', 'Team 1 PP-1 Wickets Lost',
+                                           'Team 1 PP-2 Wickets Lost', 'Team 1 PP-3 Wickets Lost',
+                                           'Team 1 PP-3 Runs Scored', 'Team 1 Wickets Lost', 'Winner']][:-3]
+    first_bowling_runs['PP-1 Overs'] = 10.0
+
+    # getting pp-2 and pp-3 overs
+    first_bowling_runs['PP-2 Overs'] = pp2_overs
+    first_bowling_runs['PP-3 Overs'] = pp3_overs
+
+    # pp-1 was different for the rain curtailed match (Match 15 Netherlands v/s South Africa. Only 9 overs for the pp-2)
+    first_bowling_runs.at[14, 'PP-1 Overs'] = 9.0
+
+    # pp-2 was different for the rain curtailed match (Match 15 Netherlands v/s South Africa. Only 26 overs for the pp-2)
+    first_bowling_runs.at[14, 'PP-2 Overs'] = 26.0
+
+    # pp-3 was different for the rain curtailed match (Match 15 Netherlands v/s South Africa. Only 8 overs for the pp-2)
+    first_bowling_runs.at[14, 'PP-3 Overs'] = 8.0
+
+    first_bowling_runs['PP-1 Economy'] = round(
+        first_bowling_runs['Team 1 PP-1 Runs Scored'] / first_bowling_runs['PP-1 Overs'], 2)
+    first_bowling_runs['PP-2 Economy'] = round(
+        first_bowling_runs['Team 1 PP-2 Runs Scored'] / first_bowling_runs['PP-2 Overs'], 2)
+    first_bowling_runs['PP-3 Economy'] = round(
+        first_bowling_runs['Team 1 PP-3 Runs Scored'] / first_bowling_runs['PP-3 Overs'], 2)
+
+    # Convert 'RunRate' to numeric to handle NaN values
+    first_bowling_runs['PP-3 Economy'] = pd.to_numeric(first_bowling_runs['PP-3 Economy'], errors='coerce')
+
+    # Group by 'Team' and calculate the mean of 'RunRate' in pp-3
+    first_bowling_runs_pp1 = first_bowling_runs.groupby('Team 2')['PP-1 Economy'].mean().round(2).reset_index()
+    first_bowling_runs_pp2 = first_bowling_runs.groupby('Team 2')['PP-2 Economy'].mean().round(2).reset_index()
+    first_bowling_runs_pp3 = first_bowling_runs.groupby('Team 2')['PP-3 Economy'].mean().round(2).reset_index()
+
+    # merging the dataframes
+    df_econ = pd.merge(first_bowling_runs_pp1, first_bowling_runs_pp2, on='Team 2')
+    first_bowling_economy = pd.merge(df_econ, first_bowling_runs_pp3, on='Team 2')
+
+    # Melt the DataFrame to reshape it for side-by-side bar chart
+    df_melted_runs = pd.melt(first_bowling_economy, id_vars='Team 2', var_name='Powerplay', value_name='Economy')
+
+    # plot bar chart to analyse the average economy rate conceded for all teams in different phases
+    get_bar(df_melted_runs, 'Team 2', 'Economy', '1st innings economy rate conceded for all teams in different phases',
+            {'Q': 'limegreen', 'E': 'greenyellow'}, 'Team Name',
+            'Economy rate', 'first_innings_detailed_stats_9', color='Powerplay', barmode='group')
+
+    # Phasewise wickets taken
+    first_bowling_wicket_pp1 = first_bowling_runs.groupby('Team 2')['Team 1 PP-1 Wickets Lost'].mean().round(
+        2).reset_index()
+    first_bowling_wicket_pp2 = first_bowling_runs.groupby('Team 2')['Team 1 PP-2 Wickets Lost'].mean().round(
+        2).reset_index()
+    first_bowling_wicket_pp3 = first_bowling_runs.groupby('Team 2')['Team 1 PP-3 Wickets Lost'].mean().round(
+        2).reset_index()
+
+    # merging the dataframes
+    df_wick = pd.merge(first_bowling_wicket_pp1, first_bowling_wicket_pp2, on='Team 2')
+    first_bowling_wicket = pd.merge(df_wick, first_bowling_wicket_pp3, on='Team 2')
+
+    # Melt the DataFrame to reshape it for side-by-side bar chart
+    df_melted_wickets = pd.melt(first_bowling_wicket, id_vars='Team 2', var_name='Powerplay', value_name='Wickets')
+
+    # plot bar chart to analyse the average economy rate conceded for all teams in different phases
+    get_bar(df_melted_wickets, 'Team 2', 'Wickets', '1st innings wickets taken by all teams in different phases',
+            {'Q': 'limegreen', 'E': 'greenyellow'}, 'Team Name',
+            'Wickets', 'first_innings_detailed_stats_10', color='Powerplay', barmode='group')
+
+    # get average wickets per match in 1st bowling innings
+
+    first_bowling_all_wicket = pd.DataFrame()
+    first_bowling_all_wicket['Team 2'] = first_bowling_wicket['Team 2'].copy()
+    first_bowling_all_wicket['Total Wickets per match'] = first_bowling_wicket['Team 1 PP-1 Wickets Lost'] + \
+                                                          first_bowling_wicket['Team 1 PP-2 Wickets Lost'] + \
+                                                          first_bowling_wicket['Team 1 PP-3 Wickets Lost']
+    average_wicket_per_match_all_teams = first_bowling_all_wicket['Total Wickets per match'].mean().round(2)
+
+    # plot bar plot for average 1st innings boundary %age runs conceded for all teams
+    get_dotted_bar(first_bowling_all_wicket, 'Team 2', 'Total Wickets per match',
+                   '1st Bowling innings all teams average Wicket taken', 'Team Name', 'Wickets',
+                   'first_innings_detailed_stats_11', average_wicket_per_match_all_teams)
+
+    # Calculate Bowling Boundary percentage
+
+    first_team_bowling['Boundary %age'] = round(
+        ((first_team_bowling['4s'] * 4 + first_team_bowling['6s'] * 6) * 100 / first_team_bowling['Runs Conceded']), 2)
+    average_boundary_percentage_all_teams = first_team_bowling['Boundary %age'].mean().round(2)
+
+    # plot bar plot for average 1st innings boundary %age runs conceded for all teams
+    get_dotted_bar(first_team_bowling, 'Team', 'Boundary %age',
+                   '1st Bowling innings all teams average runs conceded Boundary %age', 'Team Name', 'Percentage',
+                   'first_innings_detailed_stats_12', average_boundary_percentage_all_teams)
+
+    # Calculate maiden over count
+
+    # plot bar plot for maiden overs count for all teams
+    average_first_bowling_maidens = first_team_bowling['Maidens'].mean().round(2)
+    get_dotted_bar(first_team_bowling, 'Team', 'Maidens', '1st Bowling innings Maidens count', 'Team Name', 'Maidens',
+                   'first_innings_detailed_stats_13', average_first_bowling_maidens)
+
+    # Calculate total extras conceded
+
+    # plot bar plot for total extras for all teams
+    first_team_bowling['total extras conceded'] = first_team_bowling['WD'] + first_team_bowling['NB']
+    average_extras_conceded = first_team_bowling['total extras conceded'].mean().round(2)
+    get_dotted_bar(first_team_bowling, 'Team', 'total extras conceded', '1st Bowling innings total extras count',
+                   'Team Name', 'Extras', 'first_innings_detailed_stats_14', average_extras_conceded)
+
+    # Calculate Win %age
+    df_second_inning_wins['Win %age'] = (
+            (df_second_inning_wins['Second_Winning_Team'] * 100) / df_second_inning_wins['2nd Batting Count'])
+
+    # Drop 2nd batting count
+    df_second_inning_wins.drop(['2nd Batting Count', 'Second_Winning_Team'], axis=1, inplace=True)
+
+    # Rename the 'Team' column to 'Team 1'
+    df_second_inning_wins.rename(columns={'Team': 'Team 2'}, inplace=True)
+
+    # bowling stats correlation
+
+    bowling_dfs = [first_bowling_economy, first_bowling_wicket, df_second_inning_wins]
+
+    # Use reduce to merge DataFrames based on 'Team Name'
+    merged_df = reduce(lambda left, right: pd.merge(left, right, on='Team 2', how='outer'), bowling_dfs)
+
+    # Generate a correlation heatmap
+    heatmap(merged_df, 'overall_first_bowling_heatmap', 'Correlation of Team statistics (1st Bowling)')
+
 
 def run_analysis():
     # get team standings on the points table (group stages)
@@ -371,5 +847,10 @@ def run_analysis():
     get_overall_team_stats(df_match_summary, df_points)
 
     # get winning and losing trend of teams batting 1st and second
-    get_first_second_innings_stats(df_match_summary, df_points)
+    df_first_inning_wins, df_second_inning_wins = get_first_second_innings_stats(df_match_summary, df_points)
 
+    # get stats of teams batting and bowling first
+    df_batting_scorecards = pd.read_csv('data/processed/Batting_Scorecards.csv')
+    df_bowling_scorecards = pd.read_csv('data/processed/Bowling_Scorecards.csv')
+    first_innings_detailed_stats(df_match_summary, df_first_inning_wins, df_second_inning_wins, df_batting_scorecards,
+                                 df_bowling_scorecards)
