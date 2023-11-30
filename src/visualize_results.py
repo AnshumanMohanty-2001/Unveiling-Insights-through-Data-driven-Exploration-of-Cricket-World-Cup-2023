@@ -173,6 +173,28 @@ def get_bar(df, x, y, title, color_discrete_map, xaxis_title, yaxis_title, filen
     fig.write_html(file_path)
 
 
+def get_dotted_bar(df, x, y, title, xaxis_title, yaxis_title, filename, line_data, barmode = 'relative'):
+    # Plot bar chart
+    fig = px.bar(df, x=x, y=y, title=title)
+
+    # Customize layout
+    fig.update_layout(title_x=0.5, xaxis_title=xaxis_title, yaxis_title=yaxis_title)
+
+    # Add average run rate as dotted lines
+    fig.add_shape(
+        type='line',
+        x0=-0.5,
+        x1=len(df[x]) - 0.5,
+        y0=line_data,
+        y1=line_data,
+        line=dict(color='red', width=2, dash='dash')
+    )
+
+    # Save the plot as an HTML file in the specified directory
+    file_path = os.path.join(plot_directory_path, f'{filename}.html')
+    fig.write_html(file_path)
+
+
 def heatmap(df, filename, title):
 
     # setting the figure size
