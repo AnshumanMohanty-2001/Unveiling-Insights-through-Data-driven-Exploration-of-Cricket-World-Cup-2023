@@ -397,7 +397,7 @@ def preprocess_pts_table(df, file):
     df.to_csv(file, index=False)
 
 
-def correct_team_positions(df_match_summary, df_batting_scorecards):
+def correct_team_positions_records(df_match_summary, df_batting_scorecards):
 
     # Group by 'Match No.' and create a list of teams for each match
     grouped_df = df_batting_scorecards.groupby('Match')['Team'].\
@@ -408,6 +408,14 @@ def correct_team_positions(df_match_summary, df_batting_scorecards):
 
     # Replace the old values in the records with the new ones
     df_match_summary[['Team 1', 'Team 2']] = pd.DataFrame(result_list)
+
+    # missing data for sl vs ned match 19
+    df_match_summary.at[18, 'Team 2 PP-3 Runs Scored'] = 40
+    df_match_summary.at[18, 'Team 2 PP-3 Wickets Lost'] = 1
+
+    # missing data for ind vs aus final match
+    df_match_summary.at[47, 'Team 2 PP-3 Runs Scored'] = 18
+    df_match_summary.at[47, 'Team 2 PP-3 Wickets Lost'] = 1
 
     # save the modified df
     df_match_summary.to_csv('data/processed/match_summary.csv')
@@ -552,4 +560,4 @@ def clean_data():
     df_match_summary = pd.read_csv(new_directory_path + '/match_summary.csv')
     df_batting_scorecards = pd.read_csv(new_directory_path +
                                         '/Batting_Scorecards.csv')
-    correct_team_positions(df_match_summary, df_batting_scorecards)
+    correct_team_positions_records(df_match_summary, df_batting_scorecards)
