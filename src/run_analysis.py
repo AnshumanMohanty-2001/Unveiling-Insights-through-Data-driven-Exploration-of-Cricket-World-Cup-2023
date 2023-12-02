@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from functools import reduce
 from sklearn.preprocessing import LabelEncoder
-from src.visualize_results import get_bar, get_line_chart, heatmap, get_pie, get_dotted_bar
+from src.visualize_results import get_bar, get_line_chart, heatmap, get_pie, get_dotted_bar, get_scatter
 
 # Create a directory to save the HTML file
 plot_directory_path = 'results/plots/analysis_plots'
@@ -1150,6 +1150,158 @@ def second_innings_detailed_stats(df_match_summary, df_first_inning_wins, df_sec
     heatmap(merged_df, 'overall_second_bowling_heatmap', 'Correlation of Team statistics (2nd Bowling)')
 
 
+def toss_analysis(df_match_summary, df_points):
+    toss_stats = df_match_summary[['Team 1', 'Team 2', 'Won_Toss', 'Decision_Toss', 'Winner']][:-3]
+
+    # Get the decision pie after winning toss
+
+    # plot the pie chart
+    get_pie(toss_stats, 'Decision_Toss', 'Decision after winning toss', 'toss_analysis_1')
+
+    # Get frequency of each team winning the toss
+    team_toss = toss_stats['Won_Toss'].value_counts().reset_index()
+
+    # Rename the columns
+    team_toss.columns = ['Team', 'Count']
+
+    # plot bar chart to analyse the total tosses won by each team
+    get_bar(team_toss, 'Team', 'Count', 'Toss won by Teams',
+            {'Q': 'limegreen', 'E': 'greenyellow'}, 'Teams',
+            'Toss', 'toss_analysis_2')
+
+    # Calculate toss winn percentage
+    team_toss['Toss Win_percent'] = team_toss['Count'] * 100 / 9
+
+    # Toss and win percent correlation
+
+    df_points_temp = df_points.copy()
+    # Renaming the column in points table
+    df_points_temp.rename(columns={'Teams': 'Team'}, inplace=True)
+
+    # calculate match win percentage
+    df_points_temp['Match_win_percent'] = df_points_temp['Won'] * 100 / df_points_temp['Mat']
+
+    team_toss.drop(['Count'], axis=1, inplace=True)
+    df_points_temp.drop(['Mat', 'Won', 'Lost', 'Pts', 'Qualification_Status', 'NRR'], axis=1, inplace=True)
+
+    toss_corr_dfs = [team_toss, df_points_temp]
+
+    # Use reduce to merge DataFrames based on 'Team Name'
+    merged_df = reduce(lambda left, right: pd.merge(left, right, on='Team', how='outer'), toss_corr_dfs)
+
+    # Generate a correlation heatmap for toss statistics
+    heatmap(merged_df, 'toss_win_heatmap', 'Correlation of Team winning the toss with winning the match')
+
+
+def venue_trends(df_match_summary):
+    team_venues_dict = {}
+
+    sub_df_match_summary = df_match_summary[:-3]
+
+    # Iterate over the rows of the DataFrame
+    for _, row in sub_df_match_summary.iterrows():
+        teams = [row['Team 1'], row['Team 2']]
+        venue = row['Stadium']
+
+        # Update the dictionary for each team
+        for team in teams:
+            if team in team_venues_dict:
+                team_venues_dict[team].append(venue)
+            else:
+                team_venues_dict[team] = [venue]
+
+    # Create a list to store data
+    data = []
+
+    # Iterate through the dictionary
+    for team, venues in team_venues_dict.items():
+        # Count the matches played by the team at each venue
+        venue_counts = {venue: venues.count(venue) for venue in set(venues)}
+
+        # Add a row for each team-venue combination
+        for venue, matches_played in venue_counts.items():
+            data.append({'Team': team, 'Venue': venue, 'MatchesPlayed': matches_played})
+    df_venues_teams = pd.DataFrame(data)
+
+    # plot bar chart to present the matches played by teams at different venues
+    get_bar(df_venues_teams, 'Team', 'MatchesPlayed', 'Matches Played by Teams at different venues',
+            {'Q': 'limegreen', 'E': 'greenyellow'}, 'Teams',
+            'Count', 'venue_trends_1', color='Venue', barmode='group')
+
+    # Separate matches where Team 1 won and Team 2 won
+    team1_wins = sub_df_match_summary[sub_df_match_summary['Winner'] == sub_df_match_summary['Team 1']]
+    team2_wins = sub_df_match_summary[sub_df_match_summary['Winner'] == sub_df_match_summary['Team 2']]
+
+    # Count occurrences at each venue for Team 1 wins
+    team1_wins_count = team1_wins.groupby('Stadium')['Team 1'].count().reset_index()
+    team1_wins_count = team1_wins_count.rename(columns={'Team 1': 'Team1 Wins'})
+
+    # Count occurrences at each venue for Team 2 wins
+    team2_wins_count = team2_wins.groupby('Stadium')['Team 2'].count().reset_index()
+    team2_wins_count = team2_wins_count.rename(columns={'Team 2': 'Team2 Wins'})
+
+    # Merge the two DataFrames on 'Stadium'
+    result_df = pd.merge(team1_wins_count, team2_wins_count, on='Stadium', how='outer').fillna(0)
+
+    # Melt the DataFrame to reshape it for side-by-side bar chart
+    df_melted = pd.melt(result_df, id_vars='Stadium', var_name='Batting/Chasing Team', value_name='Count')
+
+    # plot bar chart to present the matches won batting first v/s chasing at a venue
+    get_bar(df_melted, 'Stadium', 'Count', 'Matches won batting first v/s chasing at different venues',
+            {'Q': 'limegreen', 'E': 'greenyellow'}, 'Stadium',
+            'Count', 'venue_trends_2', color='Batting/Chasing Team', barmode='group')
+
+    # Get average runs per wicket and avg run rate
+    venue_wise_stats = sub_df_match_summary.groupby('Stadium', as_index=False).agg(
+        {'Team 1 Runs Scored': 'sum', 'Team 1 Wickets Lost': 'sum', 'Team 1 Overs': 'sum', 'Team 2 Runs Scored': 'sum',
+         'Team 2 Wickets Lost': 'sum', 'Team 2 Overs': 'sum'})
+
+    venue_wise_stats['Team 1 avg rpo'] = round(
+        (venue_wise_stats['Team 1 Runs Scored'] / venue_wise_stats['Team 1 Wickets Lost']), 2)
+    venue_wise_stats['Team 2 avg rpo'] = round(
+        (venue_wise_stats['Team 2 Runs Scored'] / venue_wise_stats['Team 2 Wickets Lost']), 2)
+
+    venue_wise_stats['Team 1 avg run rate'] = round(
+        (venue_wise_stats['Team 1 Runs Scored'] / venue_wise_stats['Team 1 Overs']), 2)
+    venue_wise_stats['Team 2 avg run rate'] = round(
+        (venue_wise_stats['Team 2 Runs Scored'] / venue_wise_stats['Team 2 Overs']), 2)
+
+    avg_rpo = venue_wise_stats[['Stadium', 'Team 1 avg rpo', 'Team 2 avg rpo']]
+
+    # Melt the DataFrame to reshape it for side-by-side bar chart
+    df_melted = pd.melt(avg_rpo, id_vars='Stadium', var_name='Batting/Chasing Team', value_name='rpo')
+
+    # plot bar chart to present the matches won batting first v/s chasing at a venue
+    get_bar(df_melted, 'Stadium', 'rpo', 'Average Runs per wicket batting first v/s chasing at different venues',
+            {'Q': 'limegreen', 'E': 'greenyellow'}, 'Stadium',
+            'Count', 'venue_trends_3', color='Batting/Chasing Team', barmode='group')
+
+    avg_run_rate = venue_wise_stats[['Stadium', 'Team 1 avg run rate', 'Team 2 avg run rate']]
+
+    # Melt the DataFrame to reshape it for side-by-side bar chart
+    df_melted = pd.melt(avg_run_rate, id_vars='Stadium', var_name='Batting/Chasing Team', value_name='avg run rate')
+
+    # plot bar chart to present the Average run rate batting 1st v/s chasing
+    get_bar(df_melted, 'Stadium', 'avg run rate', 'Average Run Rate batting first v/s chasing at different venues',
+            {'Q': 'limegreen', 'E': 'greenyellow'}, 'Stadium',
+            'Count', 'venue_trends_4', color='Batting/Chasing Team', barmode='group')
+
+
+def individual_batting_stats(df):
+    df = df[df['Runs'] > 100]
+    get_scatter(df, 'Runs', 'SR', 'Team', 'Player', 'Runs v/s Strike Rate scatter chart', 'Runs', 'Strike Rate', 'scatter_1', 'Runs')
+
+    get_scatter(df, 'Runs', 'Ave', 'Team', 'Player', 'Runs v/s Average scatter chart', 'Runs', 'Average', 'scatter_2', 'Runs')
+
+
+def individual_bowling_stats(df):
+    df = df[df['Wkts'] > 5]
+    get_scatter(df, 'Wkts', 'SR', 'Team', 'Player', 'Wickets v/s Strike Rate scatter chart', 'Wickets', 'Strike Rate', 'scatter_3', 'Wkts')
+
+    get_scatter(df, 'Wkts', 'Econ', 'Team', 'Player', 'Wickets v/s Economy scatter chart', 'Wickets', 'Economy', 'scatter_4', 'Wkts')
+    get_scatter(df, 'Wkts', 'Ave', 'Team', 'Player', 'Wickets v/s Bowling Average scatter chart', 'Wickets', 'Average', 'scatter_5', 'Wkts')
+
+
 def run_analysis():
     # get team standings on the points table (group stages)
     df_points = pd.read_csv('data/processed/points_table.csv')
@@ -1178,3 +1330,17 @@ def run_analysis():
     # second_innings_bowling
     second_innings_detailed_stats(df_match_summary, df_first_inning_wins, df_second_inning_wins_batting_2nd,
                                   df_batting_scorecards, df_bowling_scorecards)
+
+    #toss analysis
+    toss_analysis(df_match_summary, df_points)
+
+    # venue trends analysis
+    venue_trends(df_match_summary)
+
+    # Individual Batting stat analysis
+    df_bat_stat = pd.read_csv('data/processed/batting-most-runs-career.csv')
+    individual_batting_stats(df_bat_stat)
+
+    # Individual Bowling stat analysis
+    df_bowl_stat = pd.read_csv('data/processed/bowling-most-wickets-career.csv')
+    individual_bowling_stats(df_bowl_stat)
