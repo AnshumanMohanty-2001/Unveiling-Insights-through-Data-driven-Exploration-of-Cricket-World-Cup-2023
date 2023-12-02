@@ -224,6 +224,25 @@ def get_pie(df, names, title, filename):
     fig.write_html(file_path)
 
 
+def get_scatter(df, x, y, color, hover, title, x_axis_title, y_axis_title, filename, size):
+    # Create a scatter plot with color-coded countries
+    fig = px.scatter(df, x=x, y=y, color=color, hover_data=[hover], size = size)
+
+    # Customize the layout
+    fig.update_layout(
+        title=title,
+        xaxis_title=x_axis_title,
+        yaxis_title=y_axis_title,
+        showlegend=True,
+        title_x = 0.5
+    )
+
+
+    # Save the plot as an HTML file in the specified directory
+    file_path = os.path.join(plot_directory_path, f'{filename}.html')
+    fig.write_html(file_path)
+
+
 def visualize_results():
     """
     function to run the visualization
