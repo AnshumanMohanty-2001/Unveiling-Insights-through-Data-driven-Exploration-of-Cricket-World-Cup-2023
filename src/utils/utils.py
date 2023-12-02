@@ -2,7 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 import glob
-import geopy
 from geopy.geocoders import Nominatim
 import re
 
@@ -33,6 +32,7 @@ def save_df(columns, records, df_folder, name):
     """
 
     df = pd.DataFrame(records, columns=columns)
+
     df.to_csv(f'data/{df_folder}/{name}.csv', index=False)
 
 
