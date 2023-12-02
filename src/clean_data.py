@@ -398,7 +398,6 @@ def preprocess_pts_table(df, file):
 
 
 def correct_team_positions_records(df_match_summary, df_batting_scorecards):
-
     # Group by 'Match No.' and create a list of teams for each match
     grouped_df = df_batting_scorecards.groupby('Match')['Team'].\
         apply(list).reset_index()
