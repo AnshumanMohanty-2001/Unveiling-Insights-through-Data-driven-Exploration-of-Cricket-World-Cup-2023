@@ -87,6 +87,8 @@ def get_match_schedule_results(url):
         final_records.append(match_record)
 
     # save dataframes
+    # final_records = final_records[::-1]
+
     save_df(column_matches, final_records, 'raw', 'match_schedule_results')
 
 
@@ -118,15 +120,12 @@ def get_match_facts(file_path):
         for inner_div in soup.find('div',
                                    class_='ds-flex ds-flex-col ds-mt-3 '
                                           'md:ds-mt-0 ds-mt-0 ds-mb-1'):
-
             count = 0
 
             for inner_tag in inner_div:
-
                 count += 1
 
                 if count == 1:
-
                     continue
 
                 team_scores.append(inner_tag.text)
@@ -146,31 +145,24 @@ def get_match_facts(file_path):
                                               'ds-font-regular '
                                               'ds-list-disc ds-pt-2 '
                                               'ds-px-4 ds-mb-4'):
-
             flag = False
 
             for inner_div in tag:
 
                 if 'Powerplay 1:' in inner_div.text:
-
                     pp_1.append(inner_div.text)
 
                 elif 'Powerplay 2:' in inner_div.text:
-
                     pp_2.append(inner_div.text)
 
                 elif 'Powerplay 3:' in inner_div.text:
-
                     pp_3.append(inner_div.text)
                     flag = True
 
                 elif 'Innings Break' in inner_div.text:
-
-                    team_1_overs.append(get_first_innings_overs
-                                        (inner_div.text))
+                    team_1_overs.append(get_first_innings_overs(inner_div.text))
 
             if not flag and match_num != 36:  # Match 36 has redundant li
-
                 pp_3.append('NA')
 
         match_num += 1
@@ -182,11 +174,9 @@ def get_match_facts(file_path):
             for tr_element in tbody:
 
                 if 'Toss' in tr_element.text:
-
                     toss.append(tr_element.text)
 
                 elif 'Hours of play (local time)' in tr_element.text:
-
                     play_time.append(tr_element.text)
 
     # Segregating odd and even indices of lists for both teams
@@ -203,10 +193,8 @@ def get_match_facts(file_path):
 
     # getting table columns
     for i in range(len(toss)):
-
         final_records.append(
-            [play_time[i], toss[i], team_1_scores[i],
-             team_1_overs[i], team_2_scores[i],
+            [play_time[i], toss[i], team_1_scores[i], team_1_overs[i], team_2_scores[i],
              team_1_pp_1[i], team_1_pp_2[i], team_1_pp_3[i],
              team_2_pp_1[i], team_2_pp_2[i], team_2_pp_3[i], man_of_match[i]])
 
@@ -489,6 +477,11 @@ def get_data():
     matches_url = ('https://www.espncricinfo.com/records/tournament/'
                    'team-match-results/icc-cricket-world-cup-2023-24-15338')
     get_match_schedule_results(matches_url)
+
+    # reverse the records in match schedule results
+    df_reverse = pd.read_csv('data/raw/match_schedule_results.csv')
+    df_reversed = df_reverse[::-1]
+    df_reversed.to_csv('data/raw/match_schedule_results.csv', index=False)
 
     # retrieve general match facts
     get_match_facts('data/raw/match_schedule_results.csv')
