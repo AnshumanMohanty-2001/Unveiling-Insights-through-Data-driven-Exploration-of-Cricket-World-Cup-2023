@@ -17,6 +17,7 @@ if __name__ == '__main__':
     # Parse the command-line arguments
     args = parser.parse_args()
 
+    # Call the necessary functions
     if args.get:
         get_data()
 
