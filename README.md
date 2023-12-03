@@ -36,6 +36,7 @@ After navigating to the project directory, we need to type in the code:
   ```sh
   conda create -n venv
   ```
+Here, venv is the name of virtual environment.
 ## Instructions on how to install the required libraries: 
 We need to type in code: 
   ```sh
