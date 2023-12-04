@@ -26,7 +26,7 @@
 │ ├──run_analysis.py
 │ ├──visualize_results.py
 ├──.gitignore
-├──main.py
+├──main.py # main file which calls execution of other project files
 ├──project_proposal
 ├──README.md
 ├──requirements.txt
