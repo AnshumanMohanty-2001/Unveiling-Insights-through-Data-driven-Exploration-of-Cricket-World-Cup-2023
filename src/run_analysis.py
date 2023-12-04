@@ -1106,24 +1106,46 @@ def second_innings_detailed_stats(df_match_summary, df_first_inning_wins, df_sec
 
     # Calculate Phasewise powerplay wickets lost
 
-    # pp-1 wickets lost
-    second_innings_pp1_wickets = second_bowling_runs.groupby('Team 1')['Team 2 PP-1 Wickets Lost'].mean().round(
-        2).reset_index()
+    # pp-1, 2, 3 wickets lost
+    second_innings_pp1_wickets = second_bowling_runs[['Team 1', 'Team 2 PP-1 Wickets Lost']]
+    second_innings_pp2_wickets = second_bowling_runs[['Team 1', 'Team 2 PP-2 Wickets Lost']]
+    second_innings_pp3_wickets = second_bowling_runs[['Team 1', 'Team 2 PP-3 Wickets Lost']]
 
-    # pp-2 wickets lost
-    second_innings_pp2_wickets = second_bowling_runs.groupby('Team 1')['Team 2 PP-2 Wickets Lost'].mean().round(
-        2).reset_index()
+    # Rename the 'Team' column to 'Team 1'
+    df_first_inning_wins = df_first_inning_wins.rename(columns={'Team': 'Team 1'})
 
-    # pp-3 wickets lost
-    second_innings_pp3_wickets = second_bowling_runs.groupby('Team 1')['Team 2 PP-3 Wickets Lost'].mean().round(
-        2).reset_index()
+    second_innings_pp1_wickets_merged = pd.merge(second_innings_pp1_wickets, df_first_inning_wins, on='Team 1')
+    second_innings_pp2_wickets_merged = pd.merge(second_innings_pp2_wickets, df_first_inning_wins, on='Team 1')
+    second_innings_pp3_wickets_merged = pd.merge(second_innings_pp3_wickets, df_first_inning_wins, on='Team 1')
+
+    second_innings_pp1_wickets_merged['Team 2 PP-1 Wickets Lost'] = round((second_innings_pp1_wickets_merged[
+                                                                               'Team 2 PP-1 Wickets Lost'] /
+                                                                           second_innings_pp1_wickets_merged[
+                                                                               '1st Batting Count']), 2)
+    second_innings_pp2_wickets_merged['Team 2 PP-2 Wickets Lost'] = round((second_innings_pp2_wickets_merged[
+                                                                               'Team 2 PP-2 Wickets Lost'] /
+                                                                           second_innings_pp2_wickets_merged[
+                                                                               '1st Batting Count']), 2)
+    second_innings_pp3_wickets_merged['Team 2 PP-3 Wickets Lost'] = round((second_innings_pp3_wickets_merged[
+                                                                               'Team 2 PP-3 Wickets Lost'] /
+                                                                           second_innings_pp3_wickets_merged[
+                                                                               '1st Batting Count']), 2)
+
+    # dropping irrelevant columns
+
+    second_innings_pp1_wickets_merged.drop(['1st Batting Count', 'First_Winning_Team', 'Win %age'], axis=1,
+                                           inplace=True)
+    second_innings_pp2_wickets_merged.drop(['1st Batting Count', 'First_Winning_Team', 'Win %age'], axis=1,
+                                           inplace=True)
+    second_innings_pp3_wickets_merged.drop(['1st Batting Count', 'First_Winning_Team', 'Win %age'], axis=1,
+                                           inplace=True)
 
     # merging the dataframes
-    df_temp = pd.merge(second_innings_pp1_wickets, second_innings_pp2_wickets, on='Team 1')
-    powerplay_wickets_bowling_innings_2 = pd.merge(df_temp, second_innings_pp3_wickets, on='Team 1')
+    df_temp = pd.merge(second_innings_pp1_wickets_merged, second_innings_pp2_wickets_merged, on='Team 1')
+    powerplay_wickets_bowling_innings2 = pd.merge(df_temp, second_innings_pp3_wickets_merged, on='Team 1')
 
     # Melt the DataFrame to reshape it for side-by-side bar chart
-    df_melted_wickets = pd.melt(powerplay_wickets_bowling_innings_2, id_vars='Team 1', var_name='Powerplay',
+    df_melted_wickets = pd.melt(powerplay_wickets_bowling_innings2, id_vars='Team 1', var_name='Powerplay',
                                 value_name='Wickets')
 
     # plot bar chart to analyse the wickets lost by all teams in different phases
@@ -1133,8 +1155,6 @@ def second_innings_detailed_stats(df_match_summary, df_first_inning_wins, df_sec
 
     # bowling stats correlation
 
-    # Rename the 'Team' column to 'Team 1'
-    df_first_inning_wins = df_first_inning_wins.rename(columns={'Team': 'Team 1'})
 
     # Drop 2nd batting count
     df_first_inning_wins.drop(['1st Batting Count', 'First_Winning_Team'], axis=1, inplace=True)
