@@ -1160,7 +1160,7 @@ def second_innings_detailed_stats(df_match_summary, df_first_inning_wins, df_sec
     df_first_inning_wins.drop(['1st Batting Count', 'First_Winning_Team'], axis=1, inplace=True)
 
     # combine the necessary dfs
-    bowling_dfs = [second_bowling_economy, powerplay_wickets_bowling_innings_2, df_first_inning_wins]
+    bowling_dfs = [second_bowling_economy, powerplay_wickets_bowling_innings2, df_first_inning_wins]
     #     print(df_first_inning_wins)
 
     # Use reduce to merge DataFrames based on 'Team Name'
