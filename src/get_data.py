@@ -160,7 +160,8 @@ def get_match_facts(file_path):
                     flag = True
 
                 elif 'Innings Break' in inner_div.text:
-                    team_1_overs.append(get_first_innings_overs(inner_div.text))
+                    team_1_overs.append(get_first_innings_overs
+                                        (inner_div.text))
 
             if not flag and match_num != 36:  # Match 36 has redundant li
                 pp_3.append('NA')
@@ -194,7 +195,8 @@ def get_match_facts(file_path):
     # getting table columns
     for i in range(len(toss)):
         final_records.append(
-            [play_time[i], toss[i], team_1_scores[i], team_1_overs[i], team_2_scores[i],
+            [play_time[i], toss[i], team_1_scores[i],
+             team_1_overs[i], team_2_scores[i],
              team_1_pp_1[i], team_1_pp_2[i], team_1_pp_3[i],
              team_2_pp_1[i], team_2_pp_2[i], team_2_pp_3[i], man_of_match[i]])
 
@@ -238,42 +240,6 @@ def get_records(links):
             final_records.append(record)
 
         save_df(columns, final_records, 'raw', url[20:].split('/')[0])
-
-
-def get_team_extras(url):
-    """
-    function to generate the extras conceded by teams csv
-    :param url: url to extras page
-    :return: None
-    """
-
-    # Web scraping contents using beautiful soup
-    soup = get_soup(root_link + url)
-    thead = soup.find('thead')
-
-    # getting table columns
-    columns, final_records = [[] for _ in range(2)]
-
-    for inner_tr in thead:
-
-        for td_element in inner_tr:
-
-            columns.append(td_element.text)
-
-    # getting table rows
-    tbody = soup.find('tbody')
-
-    for inner_tr in tbody:
-
-        record = []
-
-        for inner_td in inner_tr:
-
-            record.append(inner_td.text)
-
-        final_records.append(record)
-
-    save_df(columns, final_records, 'raw', 'team_extras')
 
 
 def get_match_bowling_stats(file_path):
@@ -502,10 +468,6 @@ def get_data():
 
     # retrieve batting stats
     get_records(link)
-
-    # retrieve team extras
-    get_team_extras('/records/tournament/team-most-extras-innings/'
-                    'icc-cricket-world-cup-2023-24-15338')
 
     # retrieve bowling and batting scorecard for every match
     get_match_bowling_stats('data/raw/match_schedule_results.csv')
