@@ -5,6 +5,7 @@ import glob
 from geopy.geocoders import Nominatim
 import re
 
+
 def get_soup(url):
     """
     Function to return contents after web scraping
