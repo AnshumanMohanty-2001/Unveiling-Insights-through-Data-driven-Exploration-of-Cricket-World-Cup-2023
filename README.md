@@ -18,6 +18,7 @@
 │   └──without_null_value/ # contains dataframes after filling out missing values
 │ └── final_report.pdf
    └── Inferences for Visualization.ipynb # ipynb containing detailed explanation for visualizations
+   └── Inferences for Visualization.html # html file version having detailed explanation for visualizations
 ├── src/
 │ ├──utils/
 │   ├──utils.py # contains helper functions
