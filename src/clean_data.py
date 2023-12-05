@@ -18,7 +18,6 @@ def move_files_to_new_path(file_list, new_path='data/processed/'):
 
     # Move each file to the new path
     for file_path in file_list:
-
         # Extract the filename from the path
         file_name = os.path.basename(file_path)
 
@@ -76,7 +75,7 @@ def remove_columns_from_csv(df, file, columns_to_remove):
 
         # Identify columns that exist in both the DataFrame
         # and the list to remove
-        common_columns = set(df.columns).\
+        common_columns = set(df.columns). \
             intersection(columns_to_remove)
 
         # Remove specified columns if they exist
@@ -127,7 +126,6 @@ def get_columns_with_null_values(df, file):
     columns_with_null = df.columns[df.isnull().any()].tolist()
 
     if columns_with_null:
-
         files_with_null_values[file] = columns_with_null
 
 
@@ -171,7 +169,7 @@ def get_team_runs_wickets(df_facts, runs_column, wickets_column, main_column):
     """
 
     # Create two new columns by splitting the original column
-    df_facts[[runs_column, wickets_column]] = df_facts[main_column].str.\
+    df_facts[[runs_column, wickets_column]] = df_facts[main_column].str. \
         split('/', n=1, expand=True)
 
     # Convert the 'Runs' column to numeric
@@ -217,7 +215,7 @@ def clean_match_facts(df_facts, df_schedule_results, df_venues):
 
     # Extract team name and decision from the "toss" column
     df_facts['Won_Toss'] = df_facts['Toss'].str.extract(r'Toss([\w\s]+),')
-    df_facts['Decision_Toss'] = df_facts['Toss'].\
+    df_facts['Decision_Toss'] = df_facts['Toss']. \
         str.extract(r'elected to (\w+)')
 
     # Replace missing values in the "Decision" column with 'Bat'
@@ -236,7 +234,7 @@ def clean_match_facts(df_facts, df_schedule_results, df_venues):
 
     # Issue with sa vs ned match thus removing
     # the '(data)' part from the 'Column_Name' column
-    df_facts['Team 1 Score'] =\
+    df_facts['Team 1 Score'] = \
         df_facts['Team 1 Score'].str.replace(r'\(.*?\)', '', regex=True)
 
     df_facts = get_team_runs_wickets(df_facts,
@@ -266,7 +264,7 @@ def clean_match_facts(df_facts, df_schedule_results, df_venues):
     extracted_info.columns = ['Team 2 Overs']
 
     # Convert the extracted column to numeric
-    extracted_info['Team 2 Overs'] =\
+    extracted_info['Team 2 Overs'] = \
         pd.to_numeric(extracted_info['Team 2 Overs'], errors='coerce')
 
     # Fill missing values (NaN) with the value 50
@@ -279,10 +277,10 @@ def clean_match_facts(df_facts, df_schedule_results, df_venues):
     df_facts.loc[34, 'Team 2 Overs'] = dls_match_overs
 
     # Remove the data within parentheses part from the 'Team 2 Score' column
-    df_facts['Team 2 Score'] =\
+    df_facts['Team 2 Score'] = \
         df_facts['Team 2 Score'].str.replace(r'\(.*?\)', '', regex=True)
 
-    df_facts =\
+    df_facts = \
         get_team_runs_wickets(df_facts, 'Team 2 Runs Scored',
                               'Team 2 Wickets Lost',
                               'Team 2 Score')
@@ -294,9 +292,8 @@ def clean_match_facts(df_facts, df_schedule_results, df_venues):
 
     # Get team and powerplay-wise runs and wickets
     for powerplay in powerplay_list:
-
         df_facts[powerplay] = df_facts[powerplay].str.extract(r'\((.*?)\)')
-        runs_wickets_info =\
+        runs_wickets_info = \
             df_facts[powerplay].str.extract(r'(\d+)\s*run.*?(\d+)\s*wicket')
 
         # create column_names
@@ -304,10 +301,10 @@ def clean_match_facts(df_facts, df_schedule_results, df_venues):
         wickets_column = powerplay[:-6] + ' Wickets Lost'
 
         # Create new columns for runs and wickets
-        df_facts[runs_column] =\
+        df_facts[runs_column] = \
             pd.to_numeric(runs_wickets_info[0],
                           errors='coerce').astype('Int64')
-        df_facts[wickets_column] =\
+        df_facts[wickets_column] = \
             pd.to_numeric(runs_wickets_info[1],
                           errors='coerce').astype('Int64')
 
@@ -325,7 +322,7 @@ def clean_match_facts(df_facts, df_schedule_results, df_venues):
     df_facts.rename(columns={'Ground': 'City'}, inplace=True)
 
     # Merge DataFrames and keep the 'city' column from df_venues
-    df_facts =\
+    df_facts = \
         pd.merge(df_facts, df_venues[['Stadium', 'City']],
                  on='City', how='left')
 
@@ -355,17 +352,6 @@ def clean_match_facts(df_facts, df_schedule_results, df_venues):
     df_summary.to_csv('data/processed/match_summary.csv', index=False)
 
 
-def clean_team_extras(df):
-    """
-    function to clean team_extras.csv file
-    :param df: dataframe
-    :return: cleaned dataframe
-    """
-
-    df['Opposition'] = df['Opposition'].str.replace('v ', '')
-    return df
-
-
 def change_dtype_of_columns(df, column_names, new_dtype):
     """
     function to change data type of columns
@@ -389,7 +375,8 @@ def preprocess_pts_table(df, file):
     """
 
     # Use regular expression to extract text within parentheses
-    df['Qualification_Status'] = df['Teams'].str.extract(r'\((.*?)\)', expand=False)
+    df['Qualification_Status'] = \
+        df['Teams'].str.extract(r'\((.*?)\)', expand=False)
 
     # Remove the extracted text from the original column
     df['Teams'] = df['Teams'].str.replace(r'\(.*?\)', '').str.strip()
@@ -399,7 +386,7 @@ def preprocess_pts_table(df, file):
 
 def correct_team_positions_records(df_match_summary, df_batting_scorecards):
     # Group by 'Match No.' and create a list of teams for each match
-    grouped_df = df_batting_scorecards.groupby('Match')['Team'].\
+    grouped_df = df_batting_scorecards.groupby('Match')['Team']. \
         apply(list).reset_index()
 
     # Convert the grouped DataFrame to a list of lists
@@ -439,7 +426,21 @@ def clean_data():
     # remove unnecessary file
     rm_files = [new_directory_path + '/bowling-best-figures-innings.csv',
                 new_directory_path + '/bowling-most-5wi-career.csv',
-                new_directory_path + '/batting-most-hundreds-career.csv']
+                new_directory_path + '/batting-most-hundreds-career.csv',
+                new_directory_path + '/batting-most-ducks-career.csv',
+                new_directory_path +
+                '/batting-highest-career-batting-average.csv',
+                new_directory_path +
+                '/batting-highest-career-strike-rate.csv',
+                new_directory_path + '/batting-most-fifties-career.csv',
+                new_directory_path + '/batting-most-sixes-career.csv',
+                new_directory_path +
+                '/bowling-best-career-bowling-average.csv',
+                new_directory_path + '/bowling-best-career-economy-rate.csv',
+                new_directory_path + '/bowling-best-career-strike-rate.csv',
+                new_directory_path + '/bowling-most-4wi-career.csv']
+
+    print(rm_files)
     remove_files(rm_files)
 
     # get updated file list
@@ -448,7 +449,6 @@ def clean_data():
 
     # remove non-ascii characters and unimportant columns
     for file in csv_files:
-
         df = pd.read_csv(file)
         df_ascii = remove_non_ascii_characters(df)
         columns_to_remove = ['Span', '10', 'BBI', 'Scorecard', 'Tied',
@@ -462,14 +462,12 @@ def clean_data():
 
         if file.startswith(new_directory_path + '\\batting') or \
                 file.startswith(new_directory_path + '\\bowling'):
-
             df = pd.read_csv(file)
             extract_and_remove_text_within_parentheses(df, file)
 
     # get dict where keys are file names and
     # values are columns having null values
     for file in csv_files:
-
         df = pd.read_csv(file)
         get_columns_with_null_values(df, file)
 
@@ -515,22 +513,15 @@ def clean_data():
 
     # filling records where value is missing (i.e. '-' is present)
     for file in csv_files:
-
         impute_missing(file)
 
     # creating match summary
     df_facts = pd.read_csv(new_directory_path + '/match_facts.csv')
-    df_schedule_results =\
+    df_schedule_results = \
         pd.read_csv(new_directory_path + '/match_schedule_results.csv')
-    df_venues =\
+    df_venues = \
         pd.read_csv(new_directory_path + '/venues.csv')
     clean_match_facts(df_facts, df_schedule_results, df_venues)
-
-    # cleaning team_extras.csv
-    df_tx = pd.read_csv(new_directory_path + '/team_extras.csv')
-    df_tx.drop(['Ground', 'RR', 'Score', 'Overs'], axis=1, inplace=True)
-    df_tx = clean_team_extras(df_tx)
-    df_tx.to_csv(new_directory_path + '/team_extras.csv', index=False)
 
     # remove venues.csv, match_facts.csv and match_schedule_results.csv
     remove_files([new_directory_path + '/match_facts.csv',
@@ -548,7 +539,8 @@ def clean_data():
     df_bowl_score = df_bowl_score.drop(columns=[''], errors='ignore')
 
     # remove the unnamed first column
-    df_bowl_score.to_csv(new_directory_path + '/Bowling_Scorecards.csv', index = False)
+    df_bowl_score.to_csv(new_directory_path +
+                         '/Bowling_Scorecards.csv', index=False)
 
     # separating q column from points table
     df_pts = pd.read_csv(new_directory_path + '/points_table.csv')
