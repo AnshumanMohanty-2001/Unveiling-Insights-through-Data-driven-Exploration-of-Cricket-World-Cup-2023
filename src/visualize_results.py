@@ -34,11 +34,11 @@ def get_msno_matrix(df, directory_path, filename):
 
     # Check and create directories
     if not os.path.exists(full_directory_path):
-
         os.makedirs(full_directory_path)
 
     # Save the visualization as an image
     output_path = os.path.join(full_directory_path, filename.split('.')[0])
+
     plt.savefig(output_path)
 
 
@@ -109,7 +109,6 @@ def plot_point_on_map(co_ordinates_list):
     india_map = folium.Map(location=[20.5937, 78.9629], zoom_start=5)
 
     for latitude, longitude, address in co_ordinates_list:
-
         # Add a marker for the specified location with a label on hover
         marker = folium.Marker(location=[latitude, longitude],
                                icon=folium.Icon())
@@ -144,7 +143,9 @@ def get_line_chart(df, xlabel, ylabel, title, filename, color=None):
     fig.write_html(file_path)
 
 
-def get_bar(df, x, y, title, color_discrete_map, xaxis_title, yaxis_title, filename, color=None, barmode = 'relative'):
+def get_bar(df, x, y, title, color_discrete_map,
+            xaxis_title, yaxis_title, filename,
+            color=None, barmode='relative'):
     """
     function to generate plotly barplot
     :param df: dataframe
@@ -156,29 +157,47 @@ def get_bar(df, x, y, title, color_discrete_map, xaxis_title, yaxis_title, filen
     :param yaxis_title: ylabel
     :param filename: filename to be saved with
     :param color: df feature on which color is based on
-    :barmode: type of bar plot
+    :barmode: type of bar plot (relative/grouped)
     :return: None
     """
 
     # Create a Plotly Express bar plot
     fig = px.bar(df, x=x, y=y, color=color,
                  title=title,
-                 color_discrete_map=color_discrete_map, barmode = barmode)
+                 color_discrete_map=color_discrete_map, barmode=barmode)
 
     # Customize layout
-    fig.update_layout(xaxis_title=xaxis_title, yaxis_title=yaxis_title, title_x=0.5)
+    fig.update_layout(xaxis_title=xaxis_title,
+                      yaxis_title=yaxis_title, title_x=0.5)
 
     # Save the plot as an HTML file in the specified directory
     file_path = os.path.join(plot_directory_path, f'{filename}.html')
     fig.write_html(file_path)
 
 
-def get_dotted_bar(df, x, y, title, xaxis_title, yaxis_title, filename, line_data, barmode = 'relative'):
+def get_dotted_bar(df, x, y, title, xaxis_title,
+                   yaxis_title, filename, line_data):
+    """
+    function to plot the bar chart with the average value as a dotted line
+    :param df: dataframe
+    :param x: x feature
+    :param y: y feature
+    :param title: figure title
+    :param xaxis_title: xlabel
+    :param yaxis_title: ylabel
+    :param filename: filename to be saved with
+    :param color: df feature on which color is based on
+    :param line_data: average value as dotted line
+    :return: None
+    """
+
     # Plot bar chart
     fig = px.bar(df, x=x, y=y, title=title)
 
     # Customize layout
-    fig.update_layout(title_x=0.5, xaxis_title=xaxis_title, yaxis_title=yaxis_title)
+    fig.update_layout(title_x=0.5,
+                      xaxis_title=xaxis_title,
+                      yaxis_title=yaxis_title)
 
     # Add average run rate as dotted lines
     fig.add_shape(
@@ -196,6 +215,13 @@ def get_dotted_bar(df, x, y, title, xaxis_title, yaxis_title, filename, line_dat
 
 
 def heatmap(df, filename, title):
+    """
+    function to generate correlation heatmap
+    :param df: dataframe
+    :param filename: filename to be saved with
+    :param title: Heatmap title
+    :return: None
+    """
 
     # setting the figure size
     plt.figure(figsize=(10, 8))
@@ -204,15 +230,26 @@ def heatmap(df, filename, title):
     mask = np.triu(np.ones_like(df.corr(), dtype=bool))
 
     # plotting the heatmap
-    sns.heatmap(df.corr(), annot=True, cmap='inferno', fmt=".2f", linewidths=.5, mask=mask)
+    sns.heatmap(df.corr(), annot=True, cmap='inferno',
+                fmt=".2f", linewidths=.5, mask=mask)
 
     plt.title(title)
 
     # Save the figure as an image file (e.g., PNG)
+    plt.tight_layout()
     plt.savefig(plot_directory_path + '/' + filename + '.png')
 
 
 def get_pie(df, names, title, filename):
+    """
+    function to generate pie chart
+    :param df: dataframe
+    :param names: column name
+    :param title: Title of the pie chart
+    :param filename: filename to be saved with
+    :return: None
+    """
+
     # Create a pie chart using Plotly
     fig = px.pie(df, names=names, title=title)
 
@@ -224,9 +261,25 @@ def get_pie(df, names, title, filename):
     fig.write_html(file_path)
 
 
-def get_scatter(df, x, y, color, hover, title, x_axis_title, y_axis_title, filename, size):
+def get_scatter(df, x, y, color, hover, title,
+                x_axis_title, y_axis_title, filename, size):
+    """
+    function to generate a scatter chart
+    :param df: dataframe
+    :param x: x feature
+    :param y: y feature
+    :param color: column based on which the points are color coded
+    :param hover: data to show on hover
+    :param title: figure title
+    :param x_axis_title: xlabel
+    :param y_axis_title: ylabel
+    :param filename: filename to be saved with
+    :param size column which determines the size of the points
+    :return: None
+    """
+
     # Create a scatter plot with color-coded countries
-    fig = px.scatter(df, x=x, y=y, color=color, hover_data=[hover], size = size)
+    fig = px.scatter(df, x=x, y=y, color=color, hover_data=[hover], size=size)
 
     # Customize the layout
     fig.update_layout(
@@ -234,9 +287,8 @@ def get_scatter(df, x, y, color, hover, title, x_axis_title, y_axis_title, filen
         xaxis_title=x_axis_title,
         yaxis_title=y_axis_title,
         showlegend=True,
-        title_x = 0.5
+        title_x=0.5
     )
-
 
     # Save the plot as an HTML file in the specified directory
     file_path = os.path.join(plot_directory_path, f'{filename}.html')
@@ -257,12 +309,11 @@ def visualize_results():
     # get indian venues map
     df_match_summary = pd.read_csv('data/processed/match_summary.csv')
 
-    venue_city_list = df_match_summary[['Stadium', 'City']].\
+    venue_city_list = df_match_summary[['Stadium', 'City']]. \
         to_records(index=False).tolist()
     co_ordinates_list = []
 
     for venue, city in list(set(venue_city_list)):
-
         address = venue + ', ' + city
         latitude, longitude = get_longitude_and_latitude(address)
         co_ordinates_list.append([latitude, longitude, address])
