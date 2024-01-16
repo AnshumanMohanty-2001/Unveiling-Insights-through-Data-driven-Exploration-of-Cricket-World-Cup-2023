@@ -3,7 +3,6 @@
 
 ## Name of the Project: Unveiling Insights through Data-driven Exploration of Cricket World Cup 2023
 
-## Team Members (Name and Student IDs): Anshuman Mohanty (4257570790) and Kaustubh Sharma (1765749035)
 ## Project Structure:
  ```sh
 ├── data/
