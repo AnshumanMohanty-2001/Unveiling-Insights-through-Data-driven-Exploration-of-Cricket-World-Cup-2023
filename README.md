@@ -34,7 +34,7 @@
 ## Instructions to clone the repository:
 Clone the repository to your local directory by entering the following command:
   ```sh
-  git clone https://github.com/USC-DSCI-510/final-project-AnshumanMohanty-2001.git
+  https://github.com/AnshumanMohanty-2001/Unveiling-Insights-through-Data-driven-Exploration-of-Cricket-World-Cup-2023.git
   ```
 
 ## Instructions to create a conda environment: 
